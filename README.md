@@ -14,13 +14,13 @@ Evidentia is an AI-powered research tool that answers academic questions by sear
 Unlike chatbots that hallucinate references, Evidentia retrieves real papers, links every claim to its source, and tells you when the evidence is conflicting or insufficient.
 
 <p align="center">
-  <img src="docs/screenshots/landing.png" alt="Evidentia — Landing Page" width="800">
+  <img src="docs/screenshots/image.png" alt="Evidentia — Landing Page" width="800">
   <br>
   <em>Ask any research question — Evidentia searches real academic databases and builds verified claims.</em>
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/results.png" alt="Evidentia — Research Results" width="800">
+  <img src="docs/screenshots/query.png" alt="Evidentia — Research Results" width="800">
   <br>
   <em>Every claim is graded by confidence, backed by real citations, and fully traceable.</em>
 </p>
