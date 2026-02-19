@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evidentia — AI Research Agent</title>
+  <meta name="description" content="Evidentia decomposes research questions, gathers evidence from academic sources, and returns verified claims with citations." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='64' y2='64'%3E%3Cstop stop-color='%236366f1'/%3E%3Cstop offset='1' stop-color='%2314b8a6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M30 12c-6 0-11 3-13 8-1.5 3.5-1 7.5 1 11 1.5 2.5 2 5.5 1.5 8.5-.5 3 1 5.5 4 6.5 2 .7 4.5.5 6.5-.5V12z' fill='url(%23g)' opacity='.9'/%3E%3Cpath d='M34 12c6 0 11 3 13 8 1.5 3.5 1 7.5-1 11-1.5 2.5-2 5.5-1.5 8.5.5 3-1 5.5-4 6.5-2 .7-4.5.5-6.5-.5V12z' fill='url(%23g)' opacity='.7'/%3E%3Cpath d='M32 6a26 26 0 0 1 18 7.5' stroke='%23a5b4fc' stroke-width='2.5' stroke-linecap='round' fill='none'/%3E%3Cpath d='M50 13.5l-1.5-5 5-1' stroke='%23a5b4fc' stroke-width='2' stroke-linecap='round' fill='none'/%3E%3Cpath d='M32 58a26 26 0 0 1-18-7.5' stroke='%235eead4' stroke-width='2.5' stroke-linecap='round' fill='none'/%3E%3Cpath d='M14 50.5l1.5 5-5 1' stroke='%235eead4' stroke-width='2' stroke-linecap='round' fill='none'/%3E%3C/svg%3E" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+
+  <!-- ───────────────────────── Animated Background ───────────────────────── -->
+  <div class="bg-mesh" aria-hidden="true">
+    <div class="bg-orb bg-orb--1"></div>
+    <div class="bg-orb bg-orb--2"></div>
+    <div class="bg-orb bg-orb--3"></div>
+  </div>
+  <div class="bg-noise" aria-hidden="true"></div>
+
+  <!-- ───────────────────────── Sidebar ───────────────────────── -->
+  <aside id="sidebar" class="sidebar" aria-label="Sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <svg class="brand-icon" width="32" height="32" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="brandGrad" x1="0" y1="0" x2="64" y2="64"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#14b8a6"/></linearGradient>
+            <linearGradient id="loopGrad" x1="20" y1="10" x2="44" y2="54"><stop stop-color="#a5b4fc"/><stop offset="1" stop-color="#5eead4"/></linearGradient>
+          </defs>
+          <!-- Brain left hemisphere -->
+          <path d="M30 12c-6 0-11 3-13 8-1.5 3.5-1 7.5 1 11 1.5 2.5 2 5.5 1.5 8.5-.5 3 1 5.5 4 6.5 2 .7 4.5.5 6.5-.5V12z" fill="url(#brandGrad)" opacity="0.9"/>
+          <!-- Brain right hemisphere -->
+          <path d="M34 12c6 0 11 3 13 8 1.5 3.5 1 7.5-1 11-1.5 2.5-2 5.5-1.5 8.5.5 3-1 5.5-4 6.5-2 .7-4.5.5-6.5-.5V12z" fill="url(#brandGrad)" opacity="0.7"/>
+          <!-- Brain folds (sulci) -->
+          <path d="M24 22c4-1 8 1 8 4M22 30c5-1 10 0 10 3M40 22c-4-1-8 1-8 4M42 30c-5-1-10 0-10 3" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+          <!-- Center divide -->
+          <line x1="32" y1="14" x2="32" y2="44" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+          <!-- Rethink loop arrow (circular arrow around the brain) -->
+          <path d="M32 6a26 26 0 0 1 18 7.5" stroke="url(#loopGrad)" stroke-width="2.5" stroke-linecap="round" fill="none" class="brain-loop"/>
+          <path d="M50 13.5l-1.5-5 5-1" stroke="url(#loopGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <path d="M32 58a26 26 0 0 1-18-7.5" stroke="url(#loopGrad)" stroke-width="2.5" stroke-linecap="round" fill="none" class="brain-loop"/>
+          <path d="M14 50.5l1.5 5-5 1" stroke="url(#loopGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <!-- Neural spark dots -->
+          <circle cx="26" cy="26" r="1.5" fill="#a5b4fc" class="spark-dot"><animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite"/></circle>
+          <circle cx="38" cy="34" r="1.5" fill="#5eead4" class="spark-dot"><animate attributeName="opacity" values="0.3;1;0.3" dur="2.5s" repeatCount="indefinite"/></circle>
+          <circle cx="30" cy="40" r="1.2" fill="#c4b5fd" class="spark-dot"><animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite"/></circle>
+        </svg>
+        <span class="brand-name">Evidentia</span>
+      </div>
+      <button id="sidebar-close" class="sidebar-close" aria-label="Close sidebar">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <!-- Tools Status -->
+    <section class="sidebar-section">
+      <h3 class="sidebar-title">Tools</h3>
+      <ul id="tools-list" class="tools-list">
+        <li class="tool-item" data-tool="arxiv">
+          <span class="tool-dot"></span>
+          <span class="tool-name">ArXiv</span>
+          <span class="tool-status">idle</span>
+        </li>
+        <li class="tool-item" data-tool="semantic_scholar">
+          <span class="tool-dot"></span>
+          <span class="tool-name">Semantic Scholar</span>
+          <span class="tool-status">idle</span>
+        </li>
+        <li class="tool-item" data-tool="doi_lookup">
+          <span class="tool-dot"></span>
+          <span class="tool-name">DOI Lookup</span>
+          <span class="tool-status">idle</span>
+        </li>
+        <li class="tool-item" data-tool="web_search">
+          <span class="tool-dot"></span>
+          <span class="tool-name">Web Search</span>
+          <span class="tool-status">idle</span>
+        </li>
+        <li class="tool-item" data-tool="pubmed_search">
+          <span class="tool-dot"></span>
+          <span class="tool-name">PubMed</span>
+          <span class="tool-status">idle</span>
+        </li>
+        <li class="tool-item" data-tool="openalex_search">
+          <span class="tool-dot"></span>
+          <span class="tool-name">OpenAlex</span>
+          <span class="tool-status">idle</span>
+        </li>
+        <li class="tool-item" data-tool="crossref_search">
+          <span class="tool-dot"></span>
+          <span class="tool-name">CrossRef</span>
+          <span class="tool-status">idle</span>
+        </li>
+        <li class="tool-item" data-tool="pdf_ingest">
+          <span class="tool-dot"></span>
+          <span class="tool-name">PDF Ingest</span>
+          <span class="tool-status">idle</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Projects -->
+    <section class="sidebar-section">
+      <h3 class="sidebar-title">Projects</h3>
+      <ul id="projects-list" class="projects-list">
+        <li class="project-empty">No projects yet</li>
+      </ul>
+      <button id="new-project-btn" class="btn btn-ghost btn-sm" style="width:100%;margin-top:6px;">+ New Project</button>
+    </section>
+
+    <!-- Run History -->
+    <section class="sidebar-section sidebar-section--grow">
+      <h3 class="sidebar-title">History</h3>
+      <ul id="history-list" class="history-list">
+        <li class="history-empty">No previous runs</li>
+      </ul>
+    </section>
+
+    <!-- PDF Library -->
+    <section class="sidebar-section">
+      <h3 class="sidebar-title">PDF Library</h3>
+      <ul id="pdf-library" class="pdf-library">
+        <li class="pdf-empty">No PDFs uploaded</li>
+      </ul>
+    </section>
+
+    <!-- Account & Settings -->
+    <div class="sidebar-account">
+      <div class="sidebar-account-info">
+        <div class="account-avatar" id="account-avatar">?</div>
+        <div class="account-details">
+          <span class="account-email" id="account-email">Not signed in</span>
+        </div>
+      </div>
+      <div class="sidebar-account-actions">
+        <button id="settings-btn" class="btn btn-ghost btn-sm" title="Settings">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6.5 1.5h3l.4 1.8.4.2 1.7-.8 2.1 2.1-.8 1.7.2.4 1.8.4v3l-1.8.4-.2.4.8 1.7-2.1 2.1-1.7-.8-.4.2-.4 1.8h-3l-.4-1.8-.4-.2-1.7.8-2.1-2.1.8-1.7-.2-.4L1.5 9.5v-3l1.8-.4.2-.4-.8-1.7 2.1-2.1 1.7.8.4-.2.4-1.8z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+        </button>
+        <button id="signout-btn" class="btn btn-ghost btn-sm" title="Sign out">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M11 11l3-3-3-3M6 8h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── Settings Panel (overlay) ─── -->
+  <div id="settings-overlay" class="settings-overlay" style="display:none;">
+    <div class="settings-panel glass-panel">
+      <div class="settings-header">
+        <h2 class="settings-title">Settings</h2>
+        <button id="settings-close" class="sidebar-close" aria-label="Close settings">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <!-- Account Section -->
+      <section class="settings-section">
+        <h3 class="settings-section-title">Account</h3>
+        <div class="settings-field">
+          <label>Email</label>
+          <div class="settings-value" id="settings-email">—</div>
+        </div>
+        <div class="settings-field">
+          <label>User ID</label>
+          <div class="settings-value settings-value--mono" id="settings-user-id">—</div>
+        </div>
+      </section>
+
+      <!-- API Keys Section -->
+      <section class="settings-section">
+        <h3 class="settings-section-title">API Keys</h3>
+        <p class="settings-help">Use an API key for programmatic access. Your key is shown once when generated.</p>
+        <div class="settings-field">
+          <label>Evidentia API Key</label>
+          <div class="settings-api-key-row">
+            <code class="settings-api-key" id="settings-api-key">No key generated</code>
+            <button id="generate-api-key-btn" class="btn btn-primary btn-sm">Generate Key</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- LLM API Keys Section -->
+      <section class="settings-section">
+        <h3 class="settings-section-title">LLM Provider Keys</h3>
+        <p class="settings-help">These are configured server-side via environment variables. Contact your admin to update them.</p>
+        <div class="settings-field">
+          <label>OpenAI / Anthropic</label>
+          <div class="settings-value settings-value--mono">Configured on server</div>
+        </div>
+        <div class="settings-field">
+          <label>Semantic Scholar API Key</label>
+          <div class="settings-value settings-value--mono">Optional — set S2_API_KEY env var</div>
+        </div>
+        <div class="settings-field">
+          <label>NCBI / PubMed API Key</label>
+          <div class="settings-value settings-value--mono">Optional — set NCBI_API_KEY env var</div>
+        </div>
+      </section>
+
+      <!-- Danger Zone -->
+      <section class="settings-section settings-section--danger">
+        <h3 class="settings-section-title">Session</h3>
+        <button id="signout-settings-btn" class="btn btn-danger btn-sm">Sign Out</button>
+      </section>
+    </div>
+  </div>
+
+  <!-- Sidebar overlay for mobile -->
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+  <!-- ───────────────────────── Main Content ───────────────────────── -->
+  <main id="main-content" class="main-content">
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle sidebar">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+      <div class="topbar-spacer"></div>
+      <button id="new-query-btn" class="btn btn-ghost btn-sm" style="display:none;">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        New Query
+      </button>
+    </header>
+
+    <!-- ─── Landing / Query Input ─── -->
+    <section id="landing" class="landing">
+      <div class="landing-inner">
+        <div class="hero-logo">
+          <svg width="80" height="80" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="heroGrad" x1="0" y1="0" x2="64" y2="64"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#14b8a6"/></linearGradient>
+              <linearGradient id="heroLoop" x1="20" y1="10" x2="44" y2="54"><stop stop-color="#a5b4fc"/><stop offset="1" stop-color="#5eead4"/></linearGradient>
+              <filter id="heroGlow"><feGaussianBlur stdDeviation="3" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            </defs>
+            <path d="M30 12c-6 0-11 3-13 8-1.5 3.5-1 7.5 1 11 1.5 2.5 2 5.5 1.5 8.5-.5 3 1 5.5 4 6.5 2 .7 4.5.5 6.5-.5V12z" fill="url(#heroGrad)" opacity="0.9"/>
+            <path d="M34 12c6 0 11 3 13 8 1.5 3.5 1 7.5-1 11-1.5 2.5-2 5.5-1.5 8.5.5 3-1 5.5-4 6.5-2 .7-4.5.5-6.5-.5V12z" fill="url(#heroGrad)" opacity="0.7"/>
+            <path d="M24 22c4-1 8 1 8 4M22 30c5-1 10 0 10 3M40 22c-4-1-8 1-8 4M42 30c-5-1-10 0-10 3" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+            <line x1="32" y1="14" x2="32" y2="44" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+            <path d="M32 6a26 26 0 0 1 18 7.5" stroke="url(#heroLoop)" stroke-width="2.5" stroke-linecap="round" fill="none" filter="url(#heroGlow)" class="brain-loop"/>
+            <path d="M50 13.5l-1.5-5 5-1" stroke="url(#heroLoop)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M32 58a26 26 0 0 1-18-7.5" stroke="url(#heroLoop)" stroke-width="2.5" stroke-linecap="round" fill="none" filter="url(#heroGlow)" class="brain-loop"/>
+            <path d="M14 50.5l1.5 5-5 1" stroke="url(#heroLoop)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <circle cx="26" cy="26" r="1.5" fill="#a5b4fc"><animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite"/></circle>
+            <circle cx="38" cy="34" r="1.5" fill="#5eead4"><animate attributeName="opacity" values="0.3;1;0.3" dur="2.5s" repeatCount="indefinite"/></circle>
+            <circle cx="30" cy="40" r="1.2" fill="#c4b5fd"><animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite"/></circle>
+          </svg>
+        </div>
+        <h1 class="hero-title">
+          Research with <span class="gradient-text">Evidentia</span>
+        </h1>
+        <p class="hero-subtitle">
+          Ask a research question. The agent decomposes it, gathers evidence from academic sources, and returns verified claims with full citations.
+        </p>
+
+        <!-- Mode tabs -->
+        <div class="mode-tabs">
+          <button id="mode-query" class="mode-tab mode-tab--active" data-mode="query">Quick Research</button>
+          <button id="mode-review" class="mode-tab" data-mode="review">Systematic Review</button>
+        </div>
+
+        <!-- Project selector -->
+        <div id="project-selector" class="project-selector" style="display:none;">
+          <label class="project-selector-label">Project:</label>
+          <select id="project-select" class="project-select">
+            <option value="">No project</option>
+          </select>
+          <button id="quick-create-project" class="btn btn-ghost btn-xs" title="New project">+</button>
+        </div>
+
+        <!-- Query input -->
+        <form id="query-form" class="query-form" autocomplete="off">
+          <div class="query-input-wrap">
+            <textarea
+              id="query-input"
+              class="query-input"
+              placeholder="What would you like to research?"
+              rows="3"
+              required
+            ></textarea>
+            <button type="submit" id="query-submit" class="query-submit" aria-label="Submit query">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10h14M12 5l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </form>
+
+        <!-- Example chips -->
+        <div class="example-chips">
+          <span class="chips-label">Try:</span>
+          <button class="chip" data-query="What are the latest advances in transformer architectures for protein folding prediction?">Transformer protein folding</button>
+          <button class="chip" data-query="How effective is retrieval-augmented generation compared to fine-tuning for domain-specific question answering?">RAG vs fine-tuning</button>
+          <button class="chip" data-query="What is the current evidence on the long-term neurological effects of COVID-19?">Long COVID neurology</button>
+          <button class="chip" data-query="Compare the energy efficiency of different consensus mechanisms in blockchain systems.">Blockchain consensus energy</button>
+        </div>
+
+        <!-- PDF Upload -->
+        <div class="upload-section">
+          <div id="pdf-dropzone" class="pdf-dropzone">
+            <svg class="dropzone-icon" width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <path d="M18 22V6M12 12l6-6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M6 22v6a2 2 0 002 2h20a2 2 0 002-2v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <p class="dropzone-text">Drop a PDF here or <label for="pdf-file-input" class="dropzone-link">browse</label></p>
+            <p class="dropzone-hint">Supports .pdf up to 50 MB</p>
+            <input type="file" id="pdf-file-input" accept=".pdf" hidden />
+          </div>
+          <div id="upload-progress-wrap" class="upload-progress-wrap" style="display:none;">
+            <div class="upload-file-info">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M9 1H4a1 1 0 00-1 1v12a1 1 0 001 1h8a1 1 0 001-1V5L9 1z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 1v4h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span id="upload-filename" class="upload-filename"></span>
+            </div>
+            <div class="upload-progress-bar"><div id="upload-progress" class="upload-progress-fill"></div></div>
+            <span id="upload-status" class="upload-status">Uploading...</span>
+          </div>
+        </div>
+
+        <!-- ─── Systematic Review Form (hidden by default) ─── -->
+        <div id="review-form-section" class="review-form-section" style="display:none;">
+          <form id="review-form" class="review-form" autocomplete="off">
+            <div class="review-field">
+              <label for="review-question">Research Question</label>
+              <textarea id="review-question" class="query-input" placeholder="e.g., What is the effectiveness of CBT for anxiety disorders in adults?" rows="3" required></textarea>
+            </div>
+
+            <div class="review-field">
+              <label>Inclusion Criteria</label>
+              <div id="inclusion-list" class="criteria-list">
+                <div class="criteria-item">
+                  <input type="text" class="criteria-input" placeholder="e.g., Randomized controlled trials" />
+                  <button type="button" class="btn btn-ghost btn-xs criteria-remove" title="Remove">&times;</button>
+                </div>
+              </div>
+              <button type="button" id="add-inclusion" class="btn btn-ghost btn-xs criteria-add">+ Add criterion</button>
+            </div>
+
+            <div class="review-field">
+              <label>Exclusion Criteria</label>
+              <div id="exclusion-list" class="criteria-list">
+                <div class="criteria-item">
+                  <input type="text" class="criteria-input" placeholder="e.g., Case studies, non-English" />
+                  <button type="button" class="btn btn-ghost btn-xs criteria-remove" title="Remove">&times;</button>
+                </div>
+              </div>
+              <button type="button" id="add-exclusion" class="btn btn-ghost btn-xs criteria-add">+ Add criterion</button>
+            </div>
+
+            <div class="review-field">
+              <label>Databases to Search</label>
+              <div class="db-checkboxes">
+                <label class="db-check"><input type="checkbox" value="pubmed_search" checked /> PubMed</label>
+                <label class="db-check"><input type="checkbox" value="openalex_search" checked /> OpenAlex</label>
+                <label class="db-check"><input type="checkbox" value="semantic_scholar" checked /> Semantic Scholar</label>
+                <label class="db-check"><input type="checkbox" value="crossref_search" /> CrossRef</label>
+                <label class="db-check"><input type="checkbox" value="arxiv_search" /> ArXiv</label>
+              </div>
+            </div>
+
+            <div class="review-field">
+              <label for="review-max-results">Max Results Per Database</label>
+              <div class="range-wrap">
+                <input type="range" id="review-max-results" min="10" max="500" value="100" step="10" />
+                <span id="review-max-results-val" class="range-value">100</span>
+              </div>
+            </div>
+
+            <div class="review-field">
+              <label>Review Mode</label>
+              <div class="review-mode-selector">
+                <label class="review-mode-option">
+                  <input type="radio" name="review-mode" value="fast" />
+                  <div class="review-mode-card">
+                    <span class="review-mode-name">Fast</span>
+                    <span class="review-mode-desc">Single-pass screening, no quality scoring</span>
+                  </div>
+                </label>
+                <label class="review-mode-option">
+                  <input type="radio" name="review-mode" value="rigorous" checked />
+                  <div class="review-mode-card">
+                    <span class="review-mode-name">Rigorous</span>
+                    <span class="review-mode-desc">2-pass calibrated screening + quality + contradictions</span>
+                  </div>
+                </label>
+                <label class="review-mode-option">
+                  <input type="radio" name="review-mode" value="publication" />
+                  <div class="review-mode-card">
+                    <span class="review-mode-name">Publication</span>
+                    <span class="review-mode-desc">3-pass screening, full analysis, audit-grade</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <button type="submit" id="review-submit" class="btn btn-primary" style="width:100%;margin-top:12px;">
+              Start Systematic Review
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ─── Agent Workspace (hidden until query starts) ─── -->
+    <section id="workspace" class="workspace" style="display:none;">
+
+      <!-- Active query banner -->
+      <div id="active-query-banner" class="active-query-banner">
+        <span class="active-query-label">Researching</span>
+        <span id="active-query-text" class="active-query-text"></span>
+      </div>
+
+      <!-- Stats Dashboard -->
+      <div class="stats-bar">
+        <div class="stat-card">
+          <span class="stat-value" id="stat-tools">0</span>
+          <span class="stat-label">Tool Calls</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-evidence">0</span>
+          <span class="stat-label">Evidence</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-coverage">0<small>%</small></span>
+          <span class="stat-label">Coverage</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-time">0<small>s</small></span>
+          <span class="stat-label">Elapsed</span>
+        </div>
+      </div>
+
+      <!-- Two-column layout: trace + results -->
+      <div class="workspace-columns">
+
+        <!-- Left: Agent Trace -->
+        <div class="trace-panel glass-panel">
+          <div class="panel-header">
+            <h2 class="panel-title">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              Agent Trace
+            </h2>
+            <span id="trace-phase" class="phase-badge">Idle</span>
+          </div>
+          <div id="trace-timeline" class="trace-timeline">
+            <!-- Trace steps injected here -->
+          </div>
+        </div>
+
+        <!-- Right: Results -->
+        <div class="results-panel glass-panel">
+          <div class="panel-header">
+            <h2 class="panel-title">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3h12M2 7h8M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Results
+            </h2>
+            <div id="export-buttons" class="export-buttons" style="display:none;">
+              <button class="btn btn-xs btn-outline" data-export="bibtex">BibTeX</button>
+              <button class="btn btn-xs btn-outline" data-export="ris">RIS</button>
+              <button class="btn btn-xs btn-outline" data-export="apa">APA</button>
+            </div>
+          </div>
+
+          <!-- Summary -->
+          <div id="results-summary" class="results-summary" style="display:none;"></div>
+
+          <!-- Claims -->
+          <div id="claims-container" class="claims-container">
+            <div class="results-placeholder">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.3"/><path d="M24 16v8l6 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/></svg>
+              <p>Results will appear here once the agent completes its analysis.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Systematic Review Workspace (hidden until review starts) ─── -->
+    <section id="review-workspace" class="workspace" style="display:none;">
+
+      <div id="review-query-banner" class="active-query-banner">
+        <span class="active-query-label">Systematic Review</span>
+        <span id="review-mode-badge" class="review-mode-badge" style="display:none;"></span>
+        <span id="review-query-text" class="active-query-text"></span>
+        <span id="review-run-hash" class="review-run-hash" style="display:none;" title="Reproducibility hash"></span>
+      </div>
+
+      <!-- PRISMA Phase Progress -->
+      <div class="prisma-progress">
+        <div class="prisma-phase" id="phase-identification">
+          <span class="prisma-phase-dot"></span>
+          <span class="prisma-phase-label">Identification</span>
+        </div>
+        <div class="prisma-phase-line"></div>
+        <div class="prisma-phase" id="phase-deduplication">
+          <span class="prisma-phase-dot"></span>
+          <span class="prisma-phase-label">Deduplication</span>
+        </div>
+        <div class="prisma-phase-line"></div>
+        <div class="prisma-phase" id="phase-screening">
+          <span class="prisma-phase-dot"></span>
+          <span class="prisma-phase-label">Screening</span>
+        </div>
+        <div class="prisma-phase-line"></div>
+        <div class="prisma-phase" id="phase-quality_scoring">
+          <span class="prisma-phase-dot"></span>
+          <span class="prisma-phase-label">Quality</span>
+        </div>
+        <div class="prisma-phase-line"></div>
+        <div class="prisma-phase" id="phase-contradiction_detection">
+          <span class="prisma-phase-dot"></span>
+          <span class="prisma-phase-label">Analysis</span>
+        </div>
+        <div class="prisma-phase-line"></div>
+        <div class="prisma-phase" id="phase-complete">
+          <span class="prisma-phase-dot"></span>
+          <span class="prisma-phase-label">Complete</span>
+        </div>
+      </div>
+
+      <div class="workspace-columns">
+        <!-- Left: PRISMA Flow Diagram -->
+        <div class="prisma-panel glass-panel">
+          <div class="panel-header">
+            <h2 class="panel-title">PRISMA Flow</h2>
+            <span id="review-elapsed" class="phase-badge">0s</span>
+          </div>
+          <div id="prisma-flow" class="prisma-flow">
+            <div class="prisma-box prisma-box--identification">
+              <span class="prisma-box-label">Records Identified</span>
+              <span class="prisma-box-count" id="prisma-identified">0</span>
+              <div id="prisma-db-breakdown" class="prisma-db-breakdown"></div>
+            </div>
+            <div class="prisma-connector"></div>
+            <div class="prisma-box prisma-box--dedup">
+              <span class="prisma-box-label">After Deduplication</span>
+              <span class="prisma-box-count" id="prisma-unique">0</span>
+              <span class="prisma-box-note" id="prisma-dupes-note"></span>
+            </div>
+            <div class="prisma-connector"></div>
+            <div class="prisma-box prisma-box--screening">
+              <span class="prisma-box-label">Screened</span>
+              <span class="prisma-box-count" id="prisma-screened">0</span>
+              <div id="prisma-screening-progress" class="prisma-screening-progress"></div>
+            </div>
+            <div class="prisma-connector"></div>
+            <div class="prisma-results-row">
+              <div class="prisma-box prisma-box--included">
+                <span class="prisma-box-label">Included</span>
+                <span class="prisma-box-count" id="prisma-included">0</span>
+              </div>
+              <div class="prisma-box prisma-box--excluded">
+                <span class="prisma-box-label">Excluded</span>
+                <span class="prisma-box-count" id="prisma-excluded">0</span>
+              </div>
+              <div class="prisma-box prisma-box--uncertain">
+                <span class="prisma-box-label">Uncertain</span>
+                <span class="prisma-box-count" id="prisma-uncertain">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quality Score Summary (shown after quality scoring) -->
+          <div id="quality-summary" class="quality-summary" style="display:none;">
+            <div class="quality-summary-header">
+              <span class="quality-summary-title">Evidence Quality</span>
+              <span id="quality-avg-score" class="quality-avg-badge">—</span>
+            </div>
+            <div id="quality-grade-distribution" class="quality-grade-dist"></div>
+          </div>
+
+          <!-- Contradiction Report (shown after analysis) -->
+          <div id="contradiction-report" class="contradiction-report" style="display:none;">
+            <div class="contradiction-header">
+              <span class="contradiction-title">Contradiction Analysis</span>
+              <span id="contradiction-count" class="contradiction-count-badge">0</span>
+            </div>
+            <div id="contradiction-summary" class="contradiction-summary-text"></div>
+            <div id="contradiction-list" class="contradiction-list"></div>
+            <div id="consensus-areas" class="consensus-areas"></div>
+          </div>
+        </div>
+
+        <!-- Right: Results Table -->
+        <div class="review-results-panel glass-panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Papers</h2>
+            <div id="review-export-buttons" class="export-buttons" style="display:none;">
+              <button class="btn btn-xs btn-outline" data-review-export="csv">CSV</button>
+              <button class="btn btn-xs btn-outline" data-review-export="bibtex">BibTeX</button>
+              <button class="btn btn-xs btn-outline" data-review-export="ris">RIS</button>
+            </div>
+          </div>
+
+          <!-- Tabs -->
+          <div class="review-tabs">
+            <button class="review-tab review-tab--active" data-tab="included">Included <span id="tab-included-count" class="tab-count">0</span></button>
+            <button class="review-tab" data-tab="excluded">Excluded <span id="tab-excluded-count" class="tab-count">0</span></button>
+            <button class="review-tab" data-tab="uncertain">Uncertain <span id="tab-uncertain-count" class="tab-count">0</span></button>
+          </div>
+
+          <!-- Paper lists -->
+          <div id="review-papers-included" class="review-papers-list"></div>
+          <div id="review-papers-excluded" class="review-papers-list" style="display:none;"></div>
+          <div id="review-papers-uncertain" class="review-papers-list" style="display:none;"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ─── Auth Modal ─── -->
+  <div id="auth-overlay" class="auth-overlay" style="display:none;">
+    <div class="auth-modal glass-panel">
+      <div class="auth-header">
+        <h2 class="auth-title">Welcome to <span class="gradient-text">Evidentia</span></h2>
+        <p class="auth-subtitle" id="auth-subtitle">Enter your email and password to continue</p>
+      </div>
+      <form id="auth-form" class="auth-form" autocomplete="off">
+        <div class="auth-field">
+          <label for="auth-email">Email</label>
+          <input type="email" id="auth-email" placeholder="you@example.com" required />
+        </div>
+        <div class="auth-field">
+          <label for="auth-password">Password</label>
+          <input type="password" id="auth-password" placeholder="Min. 8 characters" required minlength="8" />
+        </div>
+        <div id="auth-error" class="auth-error" style="display:none;"></div>
+        <button type="submit" id="auth-submit" class="btn btn-primary auth-submit">Continue</button>
+      </form>
+      <p class="auth-hint">New users are automatically registered.</p>
+      <div class="auth-switch" style="display:none;">
+        <span id="auth-switch-text"></span>
+        <button id="auth-switch-btn" class="btn btn-ghost btn-sm" type="button"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Toast Container ─── -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Script -->
+  <script src="/static/app.js"></script>
+</body>
+</html>

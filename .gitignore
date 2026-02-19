@@ -1,0 +1,81 @@
+# ═══════════════════════════════════════════════════════════════
+# Evidentia .gitignore
+# ═══════════════════════════════════════════════════════════════
+
+# ── Private modules ──────────────────────────────────────────────
+# Local-only exclusions are in .git/info/exclude (never committed)
+
+# ── Secrets & Credentials ─────────────────────────────────────
+.env
+.env.local
+.env.production
+.env.staging
+*.pem
+*.key
+credentials/
+secrets/
+
+# ── Claude Code / AI Tools ────────────────────────────────────
+.claude/
+
+# ── Python ────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.whl
+
+# ── Virtual Environments ──────────────────────────────────────
+.venv/
+venv/
+env/
+
+# ── IDE ───────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ── Database ──────────────────────────────────────────────────
+*.db
+*.sqlite3
+
+# ── Logs ──────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── OS Files ──────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# ── Testing / Coverage ────────────────────────────────────────
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── Docker ────────────────────────────────────────────────────
+docker-compose.override.yml
+
+# ── Node (if any frontend tooling) ───────────────────────────
+node_modules/
+.next/
+out/
+
+# ── Misc ──────────────────────────────────────────────────────
+tmp_check.js
+run_*.json
+*.bak
+*.orig

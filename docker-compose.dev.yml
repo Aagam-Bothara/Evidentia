@@ -1,0 +1,20 @@
+version: "3.9"
+
+# Development overrides — run with:
+#   docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  app:
+    build:
+      context: .
+      target: builder
+    command: ["uvicorn", "evidentia.api.server:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
+    volumes:
+      - .:/app
+    environment:
+      DATABASE_URL: postgresql+asyncpg://evidentia:evidentia@postgres:5432/evidentia
+      REDIS_URL: redis://redis:6379/0
+      EVIDENTIA_ENV: development
+      EVIDENTIA_DEBUG: "true"
+    ports:
+      - "8000:8000"

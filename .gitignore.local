@@ -1,0 +1,9 @@
+# ═══════════════════════════════════════════════════════════════
+# Local .gitignore — NOT committed to the repo
+# ═══════════════════════════════════════════════════════════════
+# These are the proprietary modules excluded from the public repo.
+
+evidentia/agent/
+evidentia/review/
+evidentia/orchestrator/
+evidentia/retrieval/
