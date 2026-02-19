@@ -852,15 +852,31 @@
     const card = document.createElement('div');
     card.className = 'claim-card';
 
-    // Header
+    const statement = claim.statement || '';
+
+    // Header — clickable to expand/collapse
     const header = document.createElement('div');
     header.className = 'claim-header';
     header.innerHTML = `
       <span class="claim-number">${num}</span>
-      <span class="claim-statement">${esc(claim.statement || '')}</span>
+      <span class="claim-statement truncated">${esc(statement)}</span>
       <span class="confidence-badge ${esc(claim.confidence || 'medium')}">${esc(claim.confidence || 'unknown')}</span>
+      <svg class="claim-expand-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
     `;
+
+    // Click header to expand/collapse
+    header.addEventListener('click', () => {
+      card.classList.toggle('expanded');
+    });
     card.appendChild(header);
+
+    // Expanded body — full statement + metadata
+    const body = document.createElement('div');
+    body.className = 'claim-body';
+    body.innerHTML = `<p style="margin:0">${esc(statement)}</p>`;
+    card.appendChild(body);
 
     // Citations section (collapsible)
     const citations = claim.citations || [];

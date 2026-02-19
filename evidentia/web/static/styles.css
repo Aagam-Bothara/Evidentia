@@ -1468,7 +1468,10 @@ button {
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
+}
+.claims-container > * {
+  flex-shrink: 0;
 }
 
 
@@ -1481,11 +1484,13 @@ button {
   border: 1px solid var(--border);
   overflow: hidden;
   animation: cardSlideIn var(--duration-slow) var(--ease-out) both;
-  transition: border-color var(--duration-normal) var(--ease-out);
+  transition: border-color var(--duration-normal) var(--ease-out),
+              box-shadow var(--duration-normal) var(--ease-out);
+  position: relative;
+  z-index: 0;
 }
 .claim-card:hover {
   border-color: var(--accent);
-  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.06);
 }
 
@@ -1497,9 +1502,13 @@ button {
 .claim-header {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
   gap: 12px;
   padding: 16px 16px 12px;
+  cursor: pointer;
+  user-select: none;
+}
+.claim-header:hover .claim-expand-icon {
+  color: var(--accent);
 }
 
 .claim-number {
@@ -1523,6 +1532,50 @@ button {
   font-weight: 500;
   line-height: 1.6;
   color: var(--text-primary);
+  min-width: 0;
+}
+/* Truncated state — 2 lines max */
+.claim-statement.truncated {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* Expanded state — show full text */
+.claim-card.expanded .claim-statement.truncated {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+/* Expand/collapse chevron */
+.claim-expand-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--text-tertiary);
+  transition: transform var(--duration-fast) var(--ease-out),
+              color var(--duration-fast);
+  margin-top: 3px;
+}
+.claim-card.expanded .claim-expand-icon {
+  transform: rotate(180deg);
+}
+
+/* Full claim body — hidden until expanded */
+.claim-body {
+  display: none;
+  padding: 0 16px 14px 52px; /* align with text after number badge */
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border-subtle);
+  margin: 0 16px;
+  padding-top: 12px;
+}
+.claim-card.expanded .claim-body {
+  display: block;
+  animation: expand var(--duration-normal) var(--ease-out);
 }
 
 /* --- Confidence Badges -------------------------------------------- */

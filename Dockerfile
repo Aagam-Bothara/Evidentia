@@ -8,14 +8,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-COPY pyproject.toml ./
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir .[retrieval,pdf]
+RUN pip install --no-cache-dir --upgrade pip
 
-# Copy source
+# Copy package metadata + minimal source for hatchling discovery
+COPY pyproject.toml README.md ./
+COPY evidentia/__init__.py evidentia/__init__.py
+
+# Install dependencies (cached unless pyproject.toml changes)
+RUN pip install --no-cache-dir .[retrieval,pdf]
+
+# Copy full source and reinstall (picks up all modules)
 COPY . .
-RUN pip install --no-cache-dir .
+RUN pip install --no-cache-dir --no-deps .
 
 # ── Runtime stage ────────────────────────────────────────────────────
 FROM python:3.13-slim AS runtime
