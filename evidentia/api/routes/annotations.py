@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -75,7 +75,7 @@ async def create_annotation(
 
     # Fallback to in-memory
     ann_id = uuid.uuid4().hex[:12]
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     ann = {
         "id": ann_id,
         "text": body.text,
@@ -119,12 +119,7 @@ async def list_annotations(
         pass
 
     # Fallback to in-memory
-    return AnnotationListResponse(
-        annotations=[
-            AnnotationResponse(**a)
-            for a in _annotation_store.get(run_id, [])
-        ]
-    )
+    return AnnotationListResponse(annotations=[AnnotationResponse(**a) for a in _annotation_store.get(run_id, [])])
 
 
 @router.delete("/annotations/{annotation_id}")
@@ -149,10 +144,10 @@ async def delete_annotation(
         pass
 
     # Fallback to in-memory
-    for run_id, annotations in _annotation_store.items():
-        for i, a in enumerate(annotations):
+    for _run_id, ann_list in _annotation_store.items():
+        for i, a in enumerate(ann_list):
             if a["id"] == annotation_id:
-                annotations.pop(i)
+                ann_list.pop(i)
                 return {"status": "deleted", "id": annotation_id}
 
     raise HTTPException(status_code=404, detail="Annotation not found")

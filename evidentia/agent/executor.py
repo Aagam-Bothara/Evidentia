@@ -13,14 +13,11 @@ from __future__ import annotations
 
 import asyncio
 import random
-from datetime import datetime, timezone
 from typing import Any
 
-from evidentia.core.exceptions import ToolExecutionError
-
-from evidentia.agent.decomposer import SubQuestion
 from evidentia.agent.evidence_graph import EvidenceFragment, EvidenceGraph
-from evidentia.agent.tool_selector import ToolSelection, ToolSelector
+from evidentia.agent.tool_selector import ToolSelection
+from evidentia.core.exceptions import ToolExecutionError
 from evidentia.core.logging import get_logger
 from evidentia.tools.base import ToolRegistry
 
@@ -79,15 +76,17 @@ class ToolExecutor:
             results_raw.append(result)
 
         execution_results: list[ExecutionResult] = []
-        for sel, result in zip(selections, results_raw):
+        for sel, result in zip(selections, results_raw, strict=False):
             if isinstance(result, Exception):
-                execution_results.append(ExecutionResult(
-                    question_id=sel.question_id,
-                    tool_name=sel.tool_name,
-                    success=False,
-                    fragments=[],
-                    error=str(result),
-                ))
+                execution_results.append(
+                    ExecutionResult(
+                        question_id=sel.question_id,
+                        tool_name=sel.tool_name,
+                        success=False,
+                        fragments=[],
+                        error=str(result),
+                    )
+                )
             else:
                 execution_results.append(result)
 
@@ -117,6 +116,7 @@ class ToolExecutor:
         # Check cache first
         try:
             from evidentia.cache import RedisCache
+
             cached = await RedisCache.get(selection.tool_name, tool_input)
             if cached is not None:
                 logger.info("tool_cache_hit", tool=selection.tool_name)
@@ -161,6 +161,7 @@ class ToolExecutor:
                 if fragments:
                     try:
                         from evidentia.cache import RedisCache
+
                         await RedisCache.set(selection.tool_name, tool_input, output)
                     except Exception:
                         pass
@@ -218,27 +219,31 @@ class ToolExecutor:
         if not isinstance(data, list):
             # Non-list outputs (e.g., python sandbox)
             if output.get("stdout") or output.get("return_value"):
-                fragments.append(EvidenceFragment(
-                    source_tool=tool_name,
-                    title="Computation result",
-                    snippet=str(output.get("stdout", output.get("return_value", ""))),
-                    raw_data=output,
-                ))
+                fragments.append(
+                    EvidenceFragment(
+                        source_tool=tool_name,
+                        title="Computation result",
+                        snippet=str(output.get("stdout", output.get("return_value", ""))),
+                        raw_data=output,
+                    )
+                )
             return fragments
 
         for item in data:
             if not isinstance(item, dict):
                 continue
 
-            fragments.append(EvidenceFragment(
-                source_tool=tool_name,
-                title=item.get("title") or item.get("arxiv_id") or "",
-                authors=item.get("authors") or [],
-                url=item.get("url") or item.get("link") or "",
-                doi=item.get("doi") or "",
-                snippet=item.get("abstract") or item.get("snippet") or item.get("text") or "",
-                raw_data=item,
-            ))
+            fragments.append(
+                EvidenceFragment(
+                    source_tool=tool_name,
+                    title=item.get("title") or item.get("arxiv_id") or "",
+                    authors=item.get("authors") or [],
+                    url=item.get("url") or item.get("link") or "",
+                    doi=item.get("doi") or "",
+                    snippet=item.get("abstract") or item.get("snippet") or item.get("text") or "",
+                    raw_data=item,
+                )
+            )
 
         return fragments
 
@@ -254,9 +259,9 @@ class ToolExecutor:
             if exc.status_code == 429:
                 if exc.retry_after is not None:
                     return min(exc.retry_after + random.uniform(0, 1), 60)
-                return min(2 ** attempt + random.uniform(0, 1), 60)
+                return min(2**attempt + random.uniform(0, 1), 60)
             if exc.status_code >= 500:
-                return min(1.5 ** attempt + random.uniform(0, 0.5), 30)
+                return min(1.5**attempt + random.uniform(0, 0.5), 30)
         return 1.0 * (attempt + 1)
 
     @staticmethod
@@ -264,7 +269,14 @@ class ToolExecutor:
         """Build tool-specific input from the selection."""
         base: dict[str, Any] = {"query": selection.query}
 
-        if selection.tool_name in ("arxiv_search", "semantic_scholar", "pubmed_search", "openalex_search", "crossref_search"):
+        academic_tools = (
+            "arxiv_search",
+            "semantic_scholar",
+            "pubmed_search",
+            "openalex_search",
+            "crossref_search",
+        )
+        if selection.tool_name in academic_tools:
             base["max_results"] = 10
         elif selection.tool_name == "web_search":
             base["max_results"] = 8

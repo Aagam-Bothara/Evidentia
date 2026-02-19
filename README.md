@@ -1,7 +1,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI">
-  <img src="https://img.shields.io/badge/tests-419%20passing-brightgreen?style=for-the-badge" alt="Tests">
+  <a href="https://github.com/Aagam-Bothara/Evidentia/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Aagam-Bothara/Evidentia/ci.yml?branch=main&style=for-the-badge&label=CI" alt="CI"></a>
   <img src="https://img.shields.io/badge/license-Apache%202.0-blue?style=for-the-badge" alt="License">
 </p>
 
@@ -140,8 +140,8 @@ PostgreSQL and Redis are optional — the app falls back to in-memory storage au
 ### Install
 
 ```bash
-git clone https://github.com/yourusername/evidentia.git
-cd evidentia
+git clone https://github.com/Aagam-Bothara/Evidentia.git
+cd Evidentia
 pip install -e ".[dev]"
 ```
 
@@ -193,6 +193,24 @@ Open [http://localhost:8000](http://localhost:8000) in your browser.
 
 ---
 
+## How we measure correctness
+
+Evidentia doesn't ask you to trust it — it gives you the tools to verify.
+
+| Dimension | How it works |
+|-----------|-------------|
+| **Citation grounding** | Every claim maps to specific evidence spans from real papers. No claim exists without a source. |
+| **Confidence scoring** | Claims are rated high / medium / low / conflicting based on evidence agreement, recency, and source quality — not LLM self-assessment. |
+| **Contradiction detection** | Cross-study conflicts are surfaced with a taxonomy: empirical (different results), methodological (different methods), interpretive (different conclusions from same data), population (different cohorts). |
+| **Screening explainability** | Each include/exclude decision in systematic reviews maps to specific criteria, so you can audit why a paper was kept or dropped. |
+| **Quality scoring** | Papers are scored on 5 dimensions: methodology rigor, sample adequacy, bias risk, reproducibility, and statistical soundness. |
+| **Reproducibility** | Every systematic review run produces a SHA-256 hash of its inputs (question, criteria, databases, parameters), so you can verify that the same inputs produce the same screening pipeline. |
+| **Source transparency** | The full tool-call trace is streamed in real time — you can see exactly which databases were queried, what was returned, and what was synthesized. |
+
+We're building toward formal evaluation benchmarks (citation precision/recall against gold-standard datasets, screening accuracy vs. human reviewers). If you're a researcher interested in contributing evaluation datasets, open an issue.
+
+---
+
 ## Project Structure
 
 ```
@@ -207,7 +225,7 @@ evidentia/
 ├── cache.py        # Redis caching layer
 ├── web/static/     # Frontend (HTML + JS + CSS)
 └── cli/            # Command-line interface
-tests/              # 419 tests
+tests/
 ```
 
 ---
@@ -241,15 +259,14 @@ tests/              # 419 tests
 # Run tests
 python -m pytest tests/ -v
 
+# Lint + format
+ruff check . && ruff format --check .
+
 # Type check
 mypy evidentia/
-
-# Format
-ruff format .
-
-# Lint
-ruff check .
 ```
+
+CI runs automatically on every push — see the [Actions tab](https://github.com/Aagam-Bothara/Evidentia/actions) for results.
 
 ---
 

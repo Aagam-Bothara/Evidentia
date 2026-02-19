@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -89,7 +89,7 @@ async def create_project(
 
     # Fallback to in-memory
     project_id = uuid.uuid4().hex[:12]
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     _project_store[project_id] = {
         "id": project_id,
         "user_id": str(user.user_id),
@@ -141,10 +141,7 @@ async def list_projects(
         pass
 
     # Fallback to in-memory
-    user_projects = [
-        p for p in _project_store.values()
-        if p["user_id"] == str(user.user_id)
-    ]
+    user_projects = [p for p in _project_store.values() if p["user_id"] == str(user.user_id)]
     return ProjectListResponse(
         projects=[
             ProjectResponse(
@@ -278,7 +275,7 @@ async def update_project(
         project["name"] = body.name
     if body.description is not None:
         project["description"] = body.description
-    project["updated_at"] = datetime.now(timezone.utc).isoformat()
+    project["updated_at"] = datetime.now(UTC).isoformat()
 
     return ProjectResponse(
         id=project["id"],

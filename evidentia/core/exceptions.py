@@ -13,6 +13,7 @@ class EvidentiaCoreError(Exception):
 
 # ── Orchestrator errors ──────────────────────────────────────────────
 
+
 class PlanningError(EvidentiaCoreError):
     """LLM planner failed to produce a valid structured plan."""
 
@@ -26,6 +27,7 @@ class OrchestrationError(EvidentiaCoreError):
 
 
 # ── Tool errors ──────────────────────────────────────────────────────
+
 
 class ToolExecutionError(EvidentiaCoreError):
     """A tool call failed after all retries."""
@@ -55,6 +57,7 @@ class ToolSchemaError(EvidentiaCoreError):
 
 # ── Validation errors ────────────────────────────────────────────────
 
+
 class ValidationError(EvidentiaCoreError):
     """Generic validation failure."""
 
@@ -69,6 +72,7 @@ class EvidenceConflictError(ValidationError):
 
 # ── Connector errors ─────────────────────────────────────────────────
 
+
 class ConnectorAuthError(EvidentiaCoreError):
     """BYO-API credentials are missing or invalid."""
 
@@ -79,11 +83,13 @@ class ConnectorRuntimeError(EvidentiaCoreError):
 
 # ── Retrieval errors ─────────────────────────────────────────────────
 
+
 class RetrievalError(EvidentiaCoreError):
     """Failed to search or retrieve documents."""
 
 
 # ── Review errors ──────────────────────────────────────────────────
+
 
 class ReviewError(EvidentiaCoreError):
     """Systematic review pipeline failure."""

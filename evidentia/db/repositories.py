@@ -5,10 +5,10 @@ from __future__ import annotations
 import hashlib
 import secrets
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import select, delete
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from evidentia.core.logging import get_logger
@@ -18,7 +18,6 @@ from evidentia.core.models import (
     ClaimConfidence,
     EvidenceSpan,
     Source,
-    SourceType,
 )
 from evidentia.db.models import (
     AnnotationRow,
@@ -57,18 +56,14 @@ class UserRepository:
         return user
 
     async def get_by_email(self, email: str) -> UserRow | None:
-        result = await self._session.execute(
-            select(UserRow).where(UserRow.email == email)
-        )
+        result = await self._session.execute(select(UserRow).where(UserRow.email == email))
         return result.scalar_one_or_none()
 
     async def get_by_id(self, user_id: uuid.UUID) -> UserRow | None:
         return await self._session.get(UserRow, user_id)
 
     async def get_by_api_key(self, api_key: str) -> UserRow | None:
-        result = await self._session.execute(
-            select(UserRow).where(UserRow.api_key == api_key)
-        )
+        result = await self._session.execute(select(UserRow).where(UserRow.api_key == api_key))
         return result.scalar_one_or_none()
 
     async def regenerate_api_key(self, user_id: uuid.UUID) -> str:
@@ -112,7 +107,7 @@ class RunRepository:
             total_tool_calls=total_tool_calls,
             total_iterations=total_iterations,
             elapsed_seconds=elapsed_seconds,
-            completed_at=datetime.now(timezone.utc),
+            completed_at=datetime.now(UTC),
         )
         self._session.add(run)
         await self._session.flush()
@@ -129,35 +124,41 @@ class RunRepository:
             await self._session.flush()
 
             for cit in claim.citations:
-                self._session.add(CitationRow(
-                    claim_id=claim_row.id,
-                    source_id=cit.source_id,
-                    title=cit.title,
-                    authors_json=cit.authors,
-                    url=cit.url,
-                    doi=cit.doi,
-                    published_date=cit.published_date,
-                ))
+                self._session.add(
+                    CitationRow(
+                        claim_id=claim_row.id,
+                        source_id=cit.source_id,
+                        title=cit.title,
+                        authors_json=cit.authors,
+                        url=cit.url,
+                        doi=cit.doi,
+                        published_date=cit.published_date,
+                    )
+                )
 
             for ev in claim.evidence_spans:
-                self._session.add(EvidenceSpanRow(
-                    claim_id=claim_row.id,
-                    source_id=ev.source_id,
-                    text=ev.text,
-                    start_offset=ev.start_offset,
-                    end_offset=ev.end_offset,
-                    is_conflicting=False,
-                ))
+                self._session.add(
+                    EvidenceSpanRow(
+                        claim_id=claim_row.id,
+                        source_id=ev.source_id,
+                        text=ev.text,
+                        start_offset=ev.start_offset,
+                        end_offset=ev.end_offset,
+                        is_conflicting=False,
+                    )
+                )
 
             for ev in claim.conflicting_evidence:
-                self._session.add(EvidenceSpanRow(
-                    claim_id=claim_row.id,
-                    source_id=ev.source_id,
-                    text=ev.text,
-                    start_offset=ev.start_offset,
-                    end_offset=ev.end_offset,
-                    is_conflicting=True,
-                ))
+                self._session.add(
+                    EvidenceSpanRow(
+                        claim_id=claim_row.id,
+                        source_id=ev.source_id,
+                        text=ev.text,
+                        start_offset=ev.start_offset,
+                        end_offset=ev.end_offset,
+                        is_conflicting=True,
+                    )
+                )
 
         await self._session.flush()
         return run
@@ -167,10 +168,7 @@ class RunRepository:
 
     async def list_runs(self, user_id: uuid.UUID, limit: int = 20) -> list[RunRow]:
         result = await self._session.execute(
-            select(RunRow)
-            .where(RunRow.user_id == user_id)
-            .order_by(RunRow.created_at.desc())
-            .limit(limit)
+            select(RunRow).where(RunRow.user_id == user_id).order_by(RunRow.created_at.desc()).limit(limit)
         )
         return list(result.scalars().all())
 
@@ -196,7 +194,8 @@ class RunRepository:
                     start_offset=e.start_offset,
                     end_offset=e.end_offset,
                 )
-                for e in cr.evidence_spans if not e.is_conflicting
+                for e in cr.evidence_spans
+                if not e.is_conflicting
             ]
             conflicting = [
                 EvidenceSpan(
@@ -205,16 +204,19 @@ class RunRepository:
                     start_offset=e.start_offset,
                     end_offset=e.end_offset,
                 )
-                for e in cr.evidence_spans if e.is_conflicting
+                for e in cr.evidence_spans
+                if e.is_conflicting
             ]
-            claims.append(Claim(
-                id=str(cr.id),
-                statement=cr.statement,
-                confidence=ClaimConfidence(cr.confidence),
-                citations=citations,
-                evidence_spans=evidence,
-                conflicting_evidence=conflicting,
-            ))
+            claims.append(
+                Claim(
+                    id=str(cr.id),
+                    statement=cr.statement,
+                    confidence=ClaimConfidence(cr.confidence),
+                    citations=citations,
+                    evidence_spans=evidence,
+                    conflicting_evidence=conflicting,
+                )
+            )
         return claims
 
 
@@ -246,16 +248,12 @@ class AnnotationRepository:
 
     async def list_by_run(self, run_id: uuid.UUID) -> list[AnnotationRow]:
         result = await self._session.execute(
-            select(AnnotationRow)
-            .where(AnnotationRow.run_id == run_id)
-            .order_by(AnnotationRow.created_at.asc())
+            select(AnnotationRow).where(AnnotationRow.run_id == run_id).order_by(AnnotationRow.created_at.asc())
         )
         return list(result.scalars().all())
 
     async def delete(self, annotation_id: uuid.UUID) -> bool:
-        result = await self._session.execute(
-            delete(AnnotationRow).where(AnnotationRow.id == annotation_id)
-        )
+        result = await self._session.execute(delete(AnnotationRow).where(AnnotationRow.id == annotation_id))
         return result.rowcount > 0  # type: ignore[return-value]
 
 
@@ -325,9 +323,7 @@ class ProjectRepository:
 
     async def list_by_user(self, user_id: uuid.UUID) -> list[ProjectRow]:
         result = await self._session.execute(
-            select(ProjectRow)
-            .where(ProjectRow.user_id == user_id)
-            .order_by(ProjectRow.updated_at.desc())
+            select(ProjectRow).where(ProjectRow.user_id == user_id).order_by(ProjectRow.updated_at.desc())
         )
         return list(result.scalars().all())
 
@@ -338,22 +334,17 @@ class ProjectRepository:
         for key, value in kwargs.items():
             if hasattr(project, key):
                 setattr(project, key, value)
-        project.updated_at = datetime.now(timezone.utc)
+        project.updated_at = datetime.now(UTC)
         await self._session.flush()
         return project
 
     async def delete(self, project_id: uuid.UUID) -> bool:
-        result = await self._session.execute(
-            delete(ProjectRow).where(ProjectRow.id == project_id)
-        )
+        result = await self._session.execute(delete(ProjectRow).where(ProjectRow.id == project_id))
         return result.rowcount > 0  # type: ignore[return-value]
 
     async def get_runs(self, project_id: uuid.UUID, limit: int = 50) -> list[RunRow]:
         result = await self._session.execute(
-            select(RunRow)
-            .where(RunRow.project_id == project_id)
-            .order_by(RunRow.created_at.desc())
-            .limit(limit)
+            select(RunRow).where(RunRow.project_id == project_id).order_by(RunRow.created_at.desc()).limit(limit)
         )
         return list(result.scalars().all())
 
@@ -369,9 +360,7 @@ class DocumentRepository:
         content_hash = hashlib.sha256(source.content.encode()).hexdigest()
 
         # Deduplicate by content hash
-        existing = await self._session.execute(
-            select(DocumentRow).where(DocumentRow.content_hash == content_hash)
-        )
+        existing = await self._session.execute(select(DocumentRow).where(DocumentRow.content_hash == content_hash))
         row = existing.scalar_one_or_none()
         if row is not None:
             return row
@@ -401,9 +390,7 @@ class DocumentRepository:
         return list(result.scalars().all())
 
     async def delete(self, doc_id: uuid.UUID) -> bool:
-        result = await self._session.execute(
-            delete(DocumentRow).where(DocumentRow.id == doc_id)
-        )
+        result = await self._session.execute(delete(DocumentRow).where(DocumentRow.id == doc_id))
         return result.rowcount > 0  # type: ignore[return-value]
 
 
@@ -438,12 +425,14 @@ class PDFRepository:
         await self._session.flush()
 
         for chunk in chunks:
-            self._session.add(PDFChunkRow(
-                pdf_id=pdf.id,
-                text=chunk.get("text", ""),
-                page_number=chunk.get("page_number", 0),
-                chunk_index=chunk.get("chunk_index", 0),
-            ))
+            self._session.add(
+                PDFChunkRow(
+                    pdf_id=pdf.id,
+                    text=chunk.get("text", ""),
+                    page_number=chunk.get("page_number", 0),
+                    chunk_index=chunk.get("chunk_index", 0),
+                )
+            )
         await self._session.flush()
         return pdf
 
@@ -458,9 +447,7 @@ class PDFRepository:
         return list(result.scalars().all())
 
     async def delete(self, pdf_id: uuid.UUID) -> bool:
-        result = await self._session.execute(
-            delete(PDFUploadRow).where(PDFUploadRow.id == pdf_id)
-        )
+        result = await self._session.execute(delete(PDFUploadRow).where(PDFUploadRow.id == pdf_id))
         return result.rowcount > 0  # type: ignore[return-value]
 
 
@@ -497,9 +484,7 @@ class TeamRepository:
         )
         return list(result.scalars().all())
 
-    async def add_member(
-        self, team_id: uuid.UUID, user_id: uuid.UUID, role: str = "viewer"
-    ) -> TeamMemberRow:
+    async def add_member(self, team_id: uuid.UUID, user_id: uuid.UUID, role: str = "viewer") -> TeamMemberRow:
         member = TeamMemberRow(team_id=team_id, user_id=user_id, role=role)
         self._session.add(member)
         await self._session.flush()

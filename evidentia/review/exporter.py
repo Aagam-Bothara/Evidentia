@@ -17,18 +17,20 @@ class ReviewExporter:
         """Export papers as CSV with screening decisions."""
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow([
-            "Title",
-            "Authors",
-            "DOI",
-            "URL",
-            "Published Date",
-            "Journal",
-            "Citation Count",
-            "Source Database",
-            "Decision",
-            "Exclusion Reason",
-        ])
+        writer.writerow(
+            [
+                "Title",
+                "Authors",
+                "DOI",
+                "URL",
+                "Published Date",
+                "Journal",
+                "Citation Count",
+                "Source Database",
+                "Decision",
+                "Exclusion Reason",
+            ]
+        )
 
         for paper in papers:
             if not include_excluded and paper.screening_decision == "exclude":
@@ -36,18 +38,20 @@ class ReviewExporter:
             if paper.is_duplicate:
                 continue
 
-            writer.writerow([
-                paper.title,
-                "; ".join(paper.authors),
-                paper.doi or "",
-                paper.url or "",
-                paper.published_date or "",
-                paper.journal or "",
-                paper.citation_count or "",
-                paper.source_database,
-                paper.screening_decision or "unscreened",
-                paper.exclusion_reason or "",
-            ])
+            writer.writerow(
+                [
+                    paper.title,
+                    "; ".join(paper.authors),
+                    paper.doi or "",
+                    paper.url or "",
+                    paper.published_date or "",
+                    paper.journal or "",
+                    paper.citation_count or "",
+                    paper.source_database,
+                    paper.screening_decision or "unscreened",
+                    paper.exclusion_reason or "",
+                ]
+            )
 
         return output.getvalue()
 

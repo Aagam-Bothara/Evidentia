@@ -1,13 +1,11 @@
 """Tests for vector store, embeddings, and hybrid search."""
 
 import math
-from unittest.mock import MagicMock, patch
 
 import pytest
 
 from evidentia.core.models import Source, SourceType
-from evidentia.retrieval.vector_store import VectorStore, VectorSearchResult, _StoredVector
-
+from evidentia.retrieval.vector_store import VectorSearchResult, VectorStore
 
 # ── Cosine similarity (pure math, no model needed) ──────────────────
 

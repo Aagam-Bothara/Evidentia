@@ -62,7 +62,7 @@ class SemanticScholarTool(BaseTool):
                 except httpx.HTTPStatusError as exc:
                     last_exc = exc
                     if exc.response.status_code == 429:
-                        retry_after = _BACKOFF_BASE * (2 ** attempt)
+                        retry_after = _BACKOFF_BASE * (2**attempt)
                         if ra := exc.response.headers.get("Retry-After"):
                             try:
                                 retry_after = max(float(ra), retry_after)
@@ -86,7 +86,7 @@ class SemanticScholarTool(BaseTool):
                 except httpx.HTTPError as exc:
                     last_exc = exc
                     if attempt < _MAX_RETRIES - 1:
-                        await asyncio.sleep(_BACKOFF_BASE * (2 ** attempt))
+                        await asyncio.sleep(_BACKOFF_BASE * (2**attempt))
                         continue
                     raise ToolExecutionError(
                         f"Semantic Scholar API request failed: {exc}",

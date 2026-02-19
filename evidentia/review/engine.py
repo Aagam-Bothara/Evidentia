@@ -15,16 +15,17 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Any, AsyncGenerator
+from collections.abc import AsyncGenerator
+from typing import Any
 
 from evidentia.core.llm import BaseLLM
 from evidentia.core.logging import get_logger
 from evidentia.review.contradictions import ContradictionDetector
 from evidentia.review.deduplicator import Deduplicator
 from evidentia.review.models import (
-    PRISMAFlowData,
-    PaperRecord,
     REVIEW_MODE_PARAMS,
+    PaperRecord,
+    PRISMAFlowData,
     ReviewConfig,
     ReviewEvent,
     ReviewRunManifest,
@@ -53,9 +54,7 @@ class SystematicReviewEngine:
         self._contradiction_detector = ContradictionDetector(llm)
         self._max_results = max_results_per_db
 
-    async def stream(
-        self, config: ReviewConfig
-    ) -> AsyncGenerator[ReviewEvent, None]:
+    async def stream(self, config: ReviewConfig) -> AsyncGenerator[ReviewEvent, None]:
         """Execute the full review pipeline, yielding events."""
         start_time = time.time()
 
@@ -109,11 +108,9 @@ class SystematicReviewEngine:
                 data={"database": db_name},
             )
 
-        results = await asyncio.gather(
-            *tasks.values(), return_exceptions=True
-        )
+        results = await asyncio.gather(*tasks.values(), return_exceptions=True)
 
-        for db_name, result in zip(tasks.keys(), results):
+        for db_name, result in zip(tasks.keys(), results, strict=False):
             if isinstance(result, Exception):
                 logger.warning(
                     "review_db_search_failed",
@@ -168,9 +165,7 @@ class SystematicReviewEngine:
             data={"phase": "deduplication"},
         )
 
-        unique_papers, duplicate_papers = self._deduplicator.deduplicate(
-            all_papers
-        )
+        unique_papers, duplicate_papers = self._deduplicator.deduplicate(all_papers)
 
         yield ReviewEvent(
             type="review_deduplication_complete",
@@ -217,14 +212,10 @@ class SystematicReviewEngine:
                         paper = unique_papers[idx]
                         if decision.confidence < 0.7 and decision.decision != "uncertain":
                             paper.screening_decision = "uncertain"
-                            paper.exclusion_reason = (
-                                f"Low confidence ({decision.confidence:.2f}): {decision.reason}"
-                            )
+                            paper.exclusion_reason = f"Low confidence ({decision.confidence:.2f}): {decision.reason}"
                         else:
                             paper.screening_decision = decision.decision
-                            paper.exclusion_reason = (
-                                decision.reason if decision.decision == "exclude" else None
-                            )
+                            paper.exclusion_reason = decision.reason if decision.decision == "exclude" else None
                         paper.screening_confidence = decision.confidence
                         paper.criteria_evaluations = decision.criteria_evaluations or None
                         paper.evidence_spans = decision.evidence_spans or None
@@ -293,15 +284,14 @@ class SystematicReviewEngine:
                 quality_scores = await self._quality_scorer.score_papers(papers_to_score)
 
                 # Attach scores to paper records
-                for paper, score in zip(papers_to_score, quality_scores):
+                for paper, score in zip(papers_to_score, quality_scores, strict=False):
                     paper.quality_score = score.overall_score
                     paper.quality_grade = score.grade
                     paper.quality_dimensions = {
                         "study_design": score.study_design.value,
                         "sample_size": score.sample_size,
                         "dimensions": [
-                            {"name": d.name, "score": d.score, "rationale": d.rationale}
-                            for d in score.dimensions
+                            {"name": d.name, "score": d.score, "rationale": d.rationale} for d in score.dimensions
                         ],
                         "summary": score.summary,
                         "has_control_group": score.has_control_group,
@@ -401,9 +391,7 @@ class SystematicReviewEngine:
             },
         )
 
-    async def _search_database(
-        self, tool_name: str, query: str
-    ) -> list[PaperRecord]:
+    async def _search_database(self, tool_name: str, query: str) -> list[PaperRecord]:
         """Search a single database and normalize results to PaperRecord."""
         tool = self._tools.get(tool_name)
         if tool is None:
@@ -417,9 +405,7 @@ class SystematicReviewEngine:
         output = await tool.execute_with_timeout(input_data)
         return self._normalize_results(tool_name, output)
 
-    def _normalize_results(
-        self, tool_name: str, output: dict[str, Any]
-    ) -> list[PaperRecord]:
+    def _normalize_results(self, tool_name: str, output: dict[str, Any]) -> list[PaperRecord]:
         """Convert tool-specific output to unified PaperRecord list."""
         papers: list[PaperRecord] = []
         data = output.get("data", [])
@@ -428,11 +414,7 @@ class SystematicReviewEngine:
             paper = PaperRecord(
                 title=item.get("title") or "",
                 authors=item.get("authors") or [],
-                abstract=(
-                    item.get("abstract")
-                    or item.get("snippet")
-                    or None
-                ),
+                abstract=(item.get("abstract") or item.get("snippet") or None),
                 doi=item.get("doi") or None,
                 url=item.get("url") or item.get("open_access_url") or None,
                 published_date=(
@@ -441,11 +423,7 @@ class SystematicReviewEngine:
                     or (str(item["year"]) if item.get("year") else None)
                 ),
                 journal=item.get("journal") or None,
-                citation_count=(
-                    item.get("citation_count")
-                    or item.get("cited_by_count")
-                    or None
-                ),
+                citation_count=(item.get("citation_count") or item.get("cited_by_count") or None),
                 source_database=tool_name,
                 source_id=(
                     item.get("pmid")

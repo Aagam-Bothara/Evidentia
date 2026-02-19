@@ -5,9 +5,8 @@ import json
 import pytest
 
 from evidentia.core.llm import BaseLLM, LLMResponse
-from evidentia.review.models import PaperRecord, ScreeningDecision
+from evidentia.review.models import PaperRecord
 from evidentia.review.screener import Screener
-
 
 # ── Mock LLM ─────────────────────────────────────────────────────────
 
@@ -69,11 +68,13 @@ def _screening_response(decisions: list[dict]) -> str:
 @pytest.mark.asyncio
 async def test_screen_single_batch():
     """Screen a small batch of papers (under BATCH_SIZE)."""
-    response = _screening_response([
-        {"paper_index": 0, "decision": "include", "reason": "Meets criteria", "confidence": 0.95},
-        {"paper_index": 1, "decision": "exclude", "reason": "Wrong population", "confidence": 0.88},
-        {"paper_index": 2, "decision": "uncertain", "reason": "Need full text", "confidence": 0.55},
-    ])
+    response = _screening_response(
+        [
+            {"paper_index": 0, "decision": "include", "reason": "Meets criteria", "confidence": 0.95},
+            {"paper_index": 1, "decision": "exclude", "reason": "Wrong population", "confidence": 0.88},
+            {"paper_index": 2, "decision": "uncertain", "reason": "Need full text", "confidence": 0.55},
+        ]
+    )
     llm = MockScreeningLLM([response])
     screener = Screener(llm)
 
@@ -95,14 +96,12 @@ async def test_screen_single_batch():
 @pytest.mark.asyncio
 async def test_screen_multiple_batches():
     """Papers exceeding BATCH_SIZE should be split across multiple LLM calls."""
-    batch1 = _screening_response([
-        {"paper_index": i, "decision": "include", "reason": "OK", "confidence": 0.9}
-        for i in range(5)
-    ])
-    batch2 = _screening_response([
-        {"paper_index": i, "decision": "include", "reason": "OK", "confidence": 0.9}
-        for i in range(3)
-    ])
+    batch1 = _screening_response(
+        [{"paper_index": i, "decision": "include", "reason": "OK", "confidence": 0.9} for i in range(5)]
+    )
+    batch2 = _screening_response(
+        [{"paper_index": i, "decision": "include", "reason": "OK", "confidence": 0.9} for i in range(3)]
+    )
     llm = MockScreeningLLM([batch1, batch2])
     screener = Screener(llm)
 
@@ -120,10 +119,12 @@ async def test_screen_multiple_batches():
 @pytest.mark.asyncio
 async def test_low_confidence_forced_uncertain():
     """Papers with confidence < 0.7 should be forced to 'uncertain'."""
-    response = _screening_response([
-        {"paper_index": 0, "decision": "include", "reason": "Maybe meets criteria", "confidence": 0.55},
-        {"paper_index": 1, "decision": "exclude", "reason": "Probably wrong", "confidence": 0.65},
-    ])
+    response = _screening_response(
+        [
+            {"paper_index": 0, "decision": "include", "reason": "Maybe meets criteria", "confidence": 0.55},
+            {"paper_index": 1, "decision": "exclude", "reason": "Probably wrong", "confidence": 0.65},
+        ]
+    )
     llm = MockScreeningLLM([response])
     screener = Screener(llm)
 
@@ -139,9 +140,11 @@ async def test_low_confidence_forced_uncertain():
 @pytest.mark.asyncio
 async def test_low_confidence_uncertain_stays_uncertain():
     """If LLM says 'uncertain' with low confidence, it stays uncertain (not double-flagged)."""
-    response = _screening_response([
-        {"paper_index": 0, "decision": "uncertain", "reason": "Need full text", "confidence": 0.3},
-    ])
+    response = _screening_response(
+        [
+            {"paper_index": 0, "decision": "uncertain", "reason": "Need full text", "confidence": 0.3},
+        ]
+    )
     llm = MockScreeningLLM([response])
     screener = Screener(llm)
 
@@ -190,9 +193,11 @@ def test_parse_invalid_decision_value():
     screener = Screener(llm)
 
     decisions = screener._parse_decisions(
-        {"decisions": [
-            {"paper_index": 0, "decision": "maybe", "reason": "Not sure", "confidence": 0.8},
-        ]},
+        {
+            "decisions": [
+                {"paper_index": 0, "decision": "maybe", "reason": "Not sure", "confidence": 0.8},
+            ]
+        },
         expected_count=1,
     )
     assert len(decisions) == 1
@@ -205,9 +210,11 @@ def test_parse_missing_papers_filled_uncertain():
     screener = Screener(llm)
 
     decisions = screener._parse_decisions(
-        {"decisions": [
-            {"paper_index": 0, "decision": "include", "reason": "Good", "confidence": 0.9},
-        ]},
+        {
+            "decisions": [
+                {"paper_index": 0, "decision": "include", "reason": "Good", "confidence": 0.9},
+            ]
+        },
         expected_count=3,
     )
     assert len(decisions) == 3
@@ -222,9 +229,11 @@ def test_parse_out_of_range_index_ignored():
     screener = Screener(llm)
 
     decisions = screener._parse_decisions(
-        {"decisions": [
-            {"paper_index": 99, "decision": "include", "reason": "Good", "confidence": 0.9},
-        ]},
+        {
+            "decisions": [
+                {"paper_index": 99, "decision": "include", "reason": "Good", "confidence": 0.9},
+            ]
+        },
         expected_count=2,
     )
     # Both papers should be uncertain (the index 99 decision was ignored)
@@ -238,10 +247,12 @@ def test_parse_duplicate_indices():
     screener = Screener(llm)
 
     decisions = screener._parse_decisions(
-        {"decisions": [
-            {"paper_index": 0, "decision": "include", "reason": "A", "confidence": 0.9},
-            {"paper_index": 0, "decision": "exclude", "reason": "B", "confidence": 0.8},
-        ]},
+        {
+            "decisions": [
+                {"paper_index": 0, "decision": "include", "reason": "A", "confidence": 0.9},
+                {"paper_index": 0, "decision": "exclude", "reason": "B", "confidence": 0.8},
+            ]
+        },
         expected_count=1,
     )
     assert len(decisions) == 1
@@ -254,10 +265,12 @@ def test_parse_confidence_clamped():
     screener = Screener(llm)
 
     decisions = screener._parse_decisions(
-        {"decisions": [
-            {"paper_index": 0, "decision": "include", "reason": "Good", "confidence": 1.5},
-            {"paper_index": 1, "decision": "exclude", "reason": "Bad", "confidence": -0.3},
-        ]},
+        {
+            "decisions": [
+                {"paper_index": 0, "decision": "include", "reason": "Good", "confidence": 1.5},
+                {"paper_index": 1, "decision": "exclude", "reason": "Bad", "confidence": -0.3},
+            ]
+        },
         expected_count=2,
     )
     assert decisions[0].confidence == 1.0

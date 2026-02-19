@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import base64
-import os
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -60,9 +59,7 @@ class CredentialVault:
         key = f"{connector_name}:{key_name}"
         cred = self._store.get(key)
         if cred is None:
-            raise ConnectorAuthError(
-                f"No credential found for {connector_name}:{key_name}"
-            )
+            raise ConnectorAuthError(f"No credential found for {connector_name}:{key_name}")
         # In production: decrypt with Vault/KMS
         return base64.b64decode(cred.encrypted_value).decode()
 

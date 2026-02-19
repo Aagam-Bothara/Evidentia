@@ -9,7 +9,6 @@ This is Evidentia's core differentiator: no public API provides this.
 from __future__ import annotations
 
 import asyncio
-import json
 import re
 from enum import Enum
 from typing import Any
@@ -83,32 +82,26 @@ class EvidenceQualityScore(BaseModel):
 
 # Study design detection patterns (applied to title + abstract)
 _DESIGN_PATTERNS: list[tuple[StudyDesign, re.Pattern]] = [
-    (StudyDesign.META_ANALYSIS, re.compile(
-        r"\bmeta[\s-]?analy", re.IGNORECASE
-    )),
-    (StudyDesign.SYSTEMATIC_REVIEW, re.compile(
-        r"\bsystematic\s+review\b", re.IGNORECASE
-    )),
-    (StudyDesign.RCT, re.compile(
-        r"\b(randomi[sz]ed\s+(controlled?\s+)?trial|RCT)\b", re.IGNORECASE
-    )),
-    (StudyDesign.COHORT, re.compile(
-        r"\b(cohort|longitudinal|prospective|retrospective)\s+(study|analysis)\b",
-        re.IGNORECASE,
-    )),
-    (StudyDesign.CASE_CONTROL, re.compile(
-        r"\bcase[\s-]?control\b", re.IGNORECASE
-    )),
-    (StudyDesign.CROSS_SECTIONAL, re.compile(
-        r"\bcross[\s-]?sectional\b", re.IGNORECASE
-    )),
-    (StudyDesign.CASE_REPORT, re.compile(
-        r"\bcase\s+(report|series)\b", re.IGNORECASE
-    )),
-    (StudyDesign.EXPERT_OPINION, re.compile(
-        r"\b(editorial|commentary|opinion|letter\s+to\s+the\s+editor)\b",
-        re.IGNORECASE,
-    )),
+    (StudyDesign.META_ANALYSIS, re.compile(r"\bmeta[\s-]?analy", re.IGNORECASE)),
+    (StudyDesign.SYSTEMATIC_REVIEW, re.compile(r"\bsystematic\s+review\b", re.IGNORECASE)),
+    (StudyDesign.RCT, re.compile(r"\b(randomi[sz]ed\s+(controlled?\s+)?trial|RCT)\b", re.IGNORECASE)),
+    (
+        StudyDesign.COHORT,
+        re.compile(
+            r"\b(cohort|longitudinal|prospective|retrospective)\s+(study|analysis)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (StudyDesign.CASE_CONTROL, re.compile(r"\bcase[\s-]?control\b", re.IGNORECASE)),
+    (StudyDesign.CROSS_SECTIONAL, re.compile(r"\bcross[\s-]?sectional\b", re.IGNORECASE)),
+    (StudyDesign.CASE_REPORT, re.compile(r"\bcase\s+(report|series)\b", re.IGNORECASE)),
+    (
+        StudyDesign.EXPERT_OPINION,
+        re.compile(
+            r"\b(editorial|commentary|opinion|letter\s+to\s+the\s+editor)\b",
+            re.IGNORECASE,
+        ),
+    ),
 ]
 
 # Sample size extraction patterns
@@ -124,7 +117,11 @@ _SAMPLE_SIZE_PATTERNS: list[re.Pattern] = [
 
 # Study count extraction for meta-analyses / systematic reviews
 _STUDY_COUNT_PATTERNS: list[re.Pattern] = [
-    re.compile(r"(\d[\d,]*)\s+(?:studies|trials|articles|publications)\s+(?:were\s+)?(?:included|selected|identified|met)", re.IGNORECASE),
+    re.compile(
+        r"(\d[\d,]*)\s+(?:studies|trials|articles|publications)"
+        r"\s+(?:were\s+)?(?:included|selected|identified|met)",
+        re.IGNORECASE,
+    ),
     re.compile(r"included\s+(\d[\d,]*)\s+(?:studies|trials|articles)", re.IGNORECASE),
     re.compile(r"(\d[\d,]*)\s+(?:studies|trials)\s+(?:in|for|with)", re.IGNORECASE),
     re.compile(r"(?:comprising|totaling|across|from)\s+(\d[\d,]*)\s+(?:studies|trials)", re.IGNORECASE),
@@ -225,9 +222,9 @@ def detect_heuristic_signals(paper: PaperRecord) -> dict[str, Any]:
 
     design = detect_study_design(text)
     sample_size = extract_sample_size(text)
-    study_count = extract_study_count(text) if design in (
-        StudyDesign.META_ANALYSIS, StudyDesign.SYSTEMATIC_REVIEW
-    ) else None
+    study_count = (
+        extract_study_count(text) if design in (StudyDesign.META_ANALYSIS, StudyDesign.SYSTEMATIC_REVIEW) else None
+    )
     has_control = bool(_CONTROL_GROUP_PATTERN.search(text))
     is_preregistered = bool(_PREREGISTRATION_PATTERN.search(text))
     has_open_data = bool(_OPEN_DATA_PATTERN.search(text))
@@ -320,14 +317,12 @@ class QualityScorer:
     def __init__(self, llm: BaseLLM) -> None:
         self._llm = llm
 
-    async def score_papers(
-        self, papers: list[PaperRecord]
-    ) -> list[EvidenceQualityScore]:
+    async def score_papers(self, papers: list[PaperRecord]) -> list[EvidenceQualityScore]:
         """Score all papers, returning quality assessments in order."""
         scores: list[EvidenceQualityScore] = []
 
         for batch_start in range(0, len(papers), self.BATCH_SIZE):
-            batch = papers[batch_start: batch_start + self.BATCH_SIZE]
+            batch = papers[batch_start : batch_start + self.BATCH_SIZE]
             batch_scores = await self._score_batch(batch)
             scores.extend(batch_scores)
 
@@ -336,9 +331,7 @@ class QualityScorer:
 
         return scores
 
-    async def _score_batch(
-        self, papers: list[PaperRecord]
-    ) -> list[EvidenceQualityScore]:
+    async def _score_batch(self, papers: list[PaperRecord]) -> list[EvidenceQualityScore]:
         """Score a batch of papers combining heuristics + LLM."""
         # Step 1: Fast heuristic signals for each paper
         heuristics = [detect_heuristic_signals(p) for p in papers]
@@ -356,9 +349,7 @@ class QualityScorer:
 
         return results
 
-    async def _llm_assess(
-        self, papers: list[PaperRecord]
-    ) -> dict[int, dict[str, Any]]:
+    async def _llm_assess(self, papers: list[PaperRecord]) -> dict[int, dict[str, Any]]:
         """Run LLM quality assessment on a batch."""
         papers_text = self._format_papers(papers)
 
@@ -373,10 +364,7 @@ class QualityScorer:
             )
             data = response.as_json()
             assessments = data.get("assessments", [])
-            return {
-                a.get("paper_index", i): a
-                for i, a in enumerate(assessments)
-            }
+            return {a.get("paper_index", i): a for i, a in enumerate(assessments)}
         except Exception as exc:
             logger.warning("quality_llm_failed", error=str(exc))
             return {}
@@ -401,17 +389,21 @@ class QualityScorer:
         signals = [f"Design: {design.value}"]
         if heuristics["has_control_group"]:
             signals.append("Control group present")
-        dimensions.append(QualityDimension(
-            name="methodology_rigor",
-            score=methodology_score,
-            rationale=llm_methodology.get("rationale", f"Study design: {design.value}"),
-            signals=signals,
-        ))
+        dimensions.append(
+            QualityDimension(
+                name="methodology_rigor",
+                score=methodology_score,
+                rationale=llm_methodology.get("rationale", f"Study design: {design.value}"),
+                signals=signals,
+            )
+        )
 
         # Dimension 2: Sample Adequacy
         llm_sample = llm_data.get("sample_adequacy", {})
         sample_heuristic = self._sample_size_score(
-            heuristics["sample_size"], design, heuristics.get("study_count"),
+            heuristics["sample_size"],
+            design,
+            heuristics.get("study_count"),
         )
         sample_score = self._blend_scores(
             heuristic=sample_heuristic,
@@ -421,12 +413,14 @@ class QualityScorer:
         sample_signals = []
         if heuristics["sample_size"]:
             sample_signals.append(f"N={heuristics['sample_size']}")
-        dimensions.append(QualityDimension(
-            name="sample_adequacy",
-            score=sample_score,
-            rationale=llm_sample.get("rationale", self._sample_rationale(heuristics["sample_size"])),
-            signals=sample_signals,
-        ))
+        dimensions.append(
+            QualityDimension(
+                name="sample_adequacy",
+                score=sample_score,
+                rationale=llm_sample.get("rationale", self._sample_rationale(heuristics["sample_size"])),
+                signals=sample_signals,
+            )
+        )
 
         # Dimension 3: Bias Risk (inverse — high score = low bias)
         llm_bias = llm_data.get("bias_risk", {})
@@ -441,12 +435,14 @@ class QualityScorer:
             bias_signals.append("Pre-registered")
         if heuristics["funding_bias_risk"] != "unknown":
             bias_signals.append(f"Funding bias: {heuristics['funding_bias_risk']}")
-        dimensions.append(QualityDimension(
-            name="bias_risk",
-            score=bias_score,
-            rationale=llm_bias.get("rationale", f"Funding bias risk: {heuristics['funding_bias_risk']}"),
-            signals=bias_signals,
-        ))
+        dimensions.append(
+            QualityDimension(
+                name="bias_risk",
+                score=bias_score,
+                rationale=llm_bias.get("rationale", f"Funding bias risk: {heuristics['funding_bias_risk']}"),
+                signals=bias_signals,
+            )
+        )
 
         # Dimension 4: Reproducibility
         llm_repro = llm_data.get("reproducibility", {})
@@ -461,12 +457,14 @@ class QualityScorer:
             repro_signals.append("Open data/code available")
         if heuristics["is_preregistered"]:
             repro_signals.append("Pre-registered protocol")
-        dimensions.append(QualityDimension(
-            name="reproducibility",
-            score=repro_score,
-            rationale=llm_repro.get("rationale", "Based on data availability and protocol registration"),
-            signals=repro_signals,
-        ))
+        dimensions.append(
+            QualityDimension(
+                name="reproducibility",
+                score=repro_score,
+                rationale=llm_repro.get("rationale", "Based on data availability and protocol registration"),
+                signals=repro_signals,
+            )
+        )
 
         # Dimension 5: Statistical Rigor
         llm_stats = llm_data.get("statistical_rigor", {})
@@ -476,12 +474,14 @@ class QualityScorer:
             llm=llm_stats.get("score"),
             heuristic_weight=0.25,
         )
-        dimensions.append(QualityDimension(
-            name="statistical_rigor",
-            score=stats_score,
-            rationale=llm_stats.get("rationale", "Statistical methods assessment"),
-            signals=[],
-        ))
+        dimensions.append(
+            QualityDimension(
+                name="statistical_rigor",
+                score=stats_score,
+                rationale=llm_stats.get("rationale", "Statistical methods assessment"),
+                signals=[],
+            )
+        )
 
         # ── Composite overall score ──
         weights = {
@@ -491,10 +491,7 @@ class QualityScorer:
             "reproducibility": 0.15,
             "statistical_rigor": 0.15,
         }
-        overall = sum(
-            d.score * weights.get(d.name, 0.2)
-            for d in dimensions
-        )
+        overall = sum(d.score * weights.get(d.name, 0.2) for d in dimensions)
         overall = round(min(1.0, max(0.0, overall)), 3)
 
         grade = self._score_to_grade(overall)
@@ -633,14 +630,14 @@ class QualityScorer:
         statistical methods, so the prior is higher.
         """
         baselines = {
-            StudyDesign.META_ANALYSIS: 0.7,      # Requires pooling methods, heterogeneity tests
-            StudyDesign.SYSTEMATIC_REVIEW: 0.6,   # Often narrative synthesis, less formal stats
-            StudyDesign.RCT: 0.65,                # Requires ITT, power analysis, CI
-            StudyDesign.COHORT: 0.55,             # Regression, survival analysis common
-            StudyDesign.CASE_CONTROL: 0.5,        # Odds ratios, matching methods
-            StudyDesign.CROSS_SECTIONAL: 0.45,    # Descriptive stats, correlations
-            StudyDesign.CASE_REPORT: 0.2,         # Rarely has formal statistics
-            StudyDesign.EXPERT_OPINION: 0.15,     # No statistical methods expected
+            StudyDesign.META_ANALYSIS: 0.7,  # Requires pooling methods, heterogeneity tests
+            StudyDesign.SYSTEMATIC_REVIEW: 0.6,  # Often narrative synthesis, less formal stats
+            StudyDesign.RCT: 0.65,  # Requires ITT, power analysis, CI
+            StudyDesign.COHORT: 0.55,  # Regression, survival analysis common
+            StudyDesign.CASE_CONTROL: 0.5,  # Odds ratios, matching methods
+            StudyDesign.CROSS_SECTIONAL: 0.45,  # Descriptive stats, correlations
+            StudyDesign.CASE_REPORT: 0.2,  # Rarely has formal statistics
+            StudyDesign.EXPERT_OPINION: 0.15,  # No statistical methods expected
             StudyDesign.UNKNOWN: 0.35,
         }
         return baselines.get(design, 0.35)

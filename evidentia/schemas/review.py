@@ -9,9 +9,7 @@ class ReviewCreateRequest(BaseModel):
     research_question: str = Field(..., min_length=10, max_length=5000)
     inclusion_criteria: list[str] = Field(..., min_length=1)
     exclusion_criteria: list[str] = Field(default_factory=list)
-    databases: list[str] = Field(
-        default_factory=lambda: ["pubmed_search", "openalex_search", "semantic_scholar"]
-    )
+    databases: list[str] = Field(default_factory=lambda: ["pubmed_search", "openalex_search", "semantic_scholar"])
     max_results_per_database: int = Field(default=100, ge=10, le=500)
     project_id: str | None = None
     mode: str = Field(default="rigorous", pattern=r"^(fast|rigorous|publication)$")

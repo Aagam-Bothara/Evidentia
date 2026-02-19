@@ -51,11 +51,11 @@ class PythonSandboxTool(BaseTool):
                 error=stderr if proc.returncode != 0 else None,
             )
 
-        except asyncio.TimeoutError:
+        except TimeoutError as exc:
             raise ToolExecutionError(
                 f"Python sandbox timed out after {params.timeout_seconds}s",
                 tool_name=self.metadata.name,
-            )
+            ) from exc
         except Exception as exc:
             raise ToolExecutionError(
                 f"Sandbox execution failed: {exc}",

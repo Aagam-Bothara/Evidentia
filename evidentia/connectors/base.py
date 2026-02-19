@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 class ConnectorMode(str, Enum):
     """How the connector executes tool calls."""
 
-    HOSTED = "hosted"       # Keys stored in vault, executed server-side
+    HOSTED = "hosted"  # Keys stored in vault, executed server-side
     USER_OWNED = "user_owned"  # Executed in user's local/VPC runtime
 
 

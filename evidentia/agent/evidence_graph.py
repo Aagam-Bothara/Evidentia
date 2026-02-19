@@ -12,20 +12,20 @@ The SYSTEM queries this graph to make decisions — not the LLM.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 from evidentia.core.logging import get_logger
-from evidentia.core.models import ClaimConfidence
 
 logger = get_logger(__name__)
 
 
 class EvidenceStatus(str, Enum):
     """Status of a sub-question's evidence gathering."""
+
     PENDING = "pending"
     SEARCHING = "searching"
     FOUND = "found"
@@ -36,6 +36,7 @@ class EvidenceStatus(str, Enum):
 
 class EvidenceFragment(BaseModel):
     """A single piece of evidence retrieved from a tool."""
+
     source_tool: str
     title: str = ""
     authors: list[str] = Field(default_factory=list)
@@ -43,12 +44,13 @@ class EvidenceFragment(BaseModel):
     doi: str = ""
     snippet: str = ""
     raw_data: dict[str, Any] = Field(default_factory=dict)
-    retrieved_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    retrieved_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     relevance_score: float = 0.0  # Set by the system, not the LLM
 
 
 class SubQuestionState(BaseModel):
     """State of evidence gathering for one sub-question."""
+
     question_id: str
     question: str
     status: EvidenceStatus = EvidenceStatus.PENDING
@@ -132,17 +134,15 @@ class EvidenceGraph:
     def get_gaps(self) -> list[SubQuestionState]:
         """Sub-questions that don't have enough evidence yet."""
         return [
-            s for s in self._questions.values()
+            s
+            for s in self._questions.values()
             if s.status in (EvidenceStatus.PENDING, EvidenceStatus.SEARCHING, EvidenceStatus.INSUFFICIENT)
             and s.evidence_count < self._min_evidence
         ]
 
     def get_answered(self) -> list[SubQuestionState]:
         """Sub-questions with sufficient evidence."""
-        return [
-            s for s in self._questions.values()
-            if s.evidence_count >= self._min_evidence
-        ]
+        return [s for s in self._questions.values() if s.evidence_count >= self._min_evidence]
 
     def get_failed(self) -> list[SubQuestionState]:
         """Sub-questions where all tools failed."""

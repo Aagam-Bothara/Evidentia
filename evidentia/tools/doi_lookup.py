@@ -53,10 +53,7 @@ class DOILookupTool(BaseTool):
                     tool_name=self.metadata.name,
                 ) from exc
 
-        authors = [
-            f"{a.get('given', '')} {a.get('family', '')}".strip()
-            for a in data.get("author", [])
-        ]
+        authors = [f"{a.get('given', '')} {a.get('family', '')}".strip() for a in data.get("author", [])]
 
         # Extract publication date
         date_parts = data.get("published-print", data.get("published-online", {}))

@@ -1,7 +1,5 @@
 """Tests for the PubMed tool."""
 
-from unittest.mock import AsyncMock, MagicMock
-
 import httpx
 import pytest
 
@@ -72,6 +70,7 @@ def _make_response(status_code: int, content: str | dict, headers: dict | None =
     """Build a mock httpx.Response."""
     if isinstance(content, dict):
         import json
+
         raw_content = json.dumps(content).encode()
         content_type = "application/json"
     else:
@@ -117,6 +116,7 @@ async def test_pubmed_search_success(monkeypatch):
 @pytest.mark.asyncio
 async def test_pubmed_structured_abstract(monkeypatch):
     """Test that structured abstracts (with labels) are parsed correctly."""
+
     async def mock_get(self, url, **kwargs):
         if "esearch" in url:
             return _make_response(200, ESEARCH_RESPONSE)
@@ -136,6 +136,7 @@ async def test_pubmed_structured_abstract(monkeypatch):
 @pytest.mark.asyncio
 async def test_pubmed_empty_results(monkeypatch):
     """Test that empty search results return empty list."""
+
     async def mock_get(self, url, **kwargs):
         return _make_response(200, {"esearchresult": {"count": "0", "idlist": []}})
 
@@ -167,6 +168,7 @@ async def test_pubmed_api_key_passed(monkeypatch):
 @pytest.mark.asyncio
 async def test_pubmed_rate_limit_error(monkeypatch):
     """Test that 429 errors propagate with status code and retry_after."""
+
     async def mock_get(self, url, **kwargs):
         resp = _make_response(429, "Rate limited", headers={"Retry-After": "5"})
         raise httpx.HTTPStatusError("429", request=resp.request, response=resp)
@@ -174,6 +176,7 @@ async def test_pubmed_rate_limit_error(monkeypatch):
     monkeypatch.setattr(httpx.AsyncClient, "get", mock_get)
 
     from evidentia.core.exceptions import ToolExecutionError
+
     tool = PubMedTool()
     with pytest.raises(ToolExecutionError) as exc_info:
         await tool.execute({"query": "test"})

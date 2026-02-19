@@ -1,9 +1,9 @@
 """Tests for core domain models."""
 
 from evidentia.core.models import (
+    Citation,
     Claim,
     ClaimConfidence,
-    Citation,
     EvidenceSpan,
     ExecutionPlan,
     PlanStep,

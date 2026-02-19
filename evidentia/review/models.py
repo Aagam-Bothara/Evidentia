@@ -4,12 +4,11 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field
-
 
 # ── Review Mode (Tiered) ────────────────────────────────────────────
 
@@ -17,8 +16,8 @@ from pydantic import BaseModel, Field
 class ReviewMode(str, Enum):
     """Tiered review modes with different rigor levels."""
 
-    FAST = "fast"               # 1 screening pass, no quality scoring, no contradictions
-    RIGOROUS = "rigorous"       # 2 screening passes, quality scoring, contradictions
+    FAST = "fast"  # 1 screening pass, no quality scoring, no contradictions
+    RIGOROUS = "rigorous"  # 2 screening passes, quality scoring, contradictions
     PUBLICATION = "publication"  # 3 screening passes, quality scoring, contradictions, full audit
 
 
@@ -51,9 +50,7 @@ class ReviewConfig(BaseModel):
     research_question: str
     inclusion_criteria: list[str]
     exclusion_criteria: list[str] = Field(default_factory=list)
-    databases: list[str] = Field(
-        default_factory=lambda: ["pubmed_search", "openalex_search", "semantic_scholar"]
-    )
+    databases: list[str] = Field(default_factory=lambda: ["pubmed_search", "openalex_search", "semantic_scholar"])
     max_results_per_db: int = 100
     mode: ReviewMode = ReviewMode.RIGOROUS
 
@@ -137,7 +134,7 @@ class ReviewEvent(BaseModel):
 
     type: str
     data: dict[str, Any] = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -164,15 +161,17 @@ class ReviewRunManifest(BaseModel):
     screening_passes: int = 1
     quality_scoring_enabled: bool = True
     contradiction_detection_enabled: bool = True
-    scoring_weights: dict[str, float] = Field(default_factory=lambda: {
-        "methodology_rigor": 0.30,
-        "sample_adequacy": 0.20,
-        "bias_risk": 0.20,
-        "reproducibility": 0.15,
-        "statistical_rigor": 0.15,
-    })
+    scoring_weights: dict[str, float] = Field(
+        default_factory=lambda: {
+            "methodology_rigor": 0.30,
+            "sample_adequacy": 0.20,
+            "bias_risk": 0.20,
+            "reproducibility": 0.15,
+            "statistical_rigor": 0.15,
+        }
+    )
     engine_version: str = "1.0.0"
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     def compute_hash(self) -> str:
         """SHA-256 hash of deterministic run inputs."""

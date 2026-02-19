@@ -82,10 +82,7 @@ class ArxivTool(BaseTool):
             abstract = (entry.findtext(f"{ATOM_NS}summary") or "").strip().replace("\n", " ")
             published = entry.findtext(f"{ATOM_NS}published") or ""
 
-            authors = [
-                (a.findtext(f"{ATOM_NS}name") or "").strip()
-                for a in entry.findall(f"{ATOM_NS}author")
-            ]
+            authors = [(a.findtext(f"{ATOM_NS}name") or "").strip() for a in entry.findall(f"{ATOM_NS}author")]
 
             # Extract DOI if present
             doi = None
@@ -93,10 +90,7 @@ class ArxivTool(BaseTool):
                 if link.get("title") == "doi":
                     doi = link.get("href")
 
-            categories = [
-                c.get("term", "")
-                for c in entry.findall("{http://arxiv.org/schemas/atom}primary_category")
-            ]
+            categories = [c.get("term", "") for c in entry.findall("{http://arxiv.org/schemas/atom}primary_category")]
 
             url = f"https://arxiv.org/abs/{arxiv_id}"
 

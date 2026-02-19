@@ -12,7 +12,6 @@ The system controls the schema. The LLM fills in the blanks.
 
 from __future__ import annotations
 
-import json
 from enum import Enum
 from typing import Any
 
@@ -26,6 +25,7 @@ logger = get_logger(__name__)
 
 class EvidenceType(str, Enum):
     """What kind of evidence a sub-question needs."""
+
     ACADEMIC_PAPERS = "academic_papers"
     WEB_SOURCES = "web_sources"
     DATA_ANALYSIS = "data_analysis"
@@ -36,7 +36,14 @@ class EvidenceType(str, Enum):
 
 # System-defined mapping: evidence type -> which tools can provide it
 EVIDENCE_TOOL_MAP: dict[EvidenceType, list[str]] = {
-    EvidenceType.ACADEMIC_PAPERS: ["arxiv_search", "semantic_scholar", "pubmed_search", "openalex_search", "crossref_search", "doi_lookup"],
+    EvidenceType.ACADEMIC_PAPERS: [
+        "arxiv_search",
+        "semantic_scholar",
+        "pubmed_search",
+        "openalex_search",
+        "crossref_search",
+        "doi_lookup",
+    ],
     EvidenceType.WEB_SOURCES: ["web_search"],
     EvidenceType.DATA_ANALYSIS: ["python_sandbox"],
     EvidenceType.FACTUAL_LOOKUP: ["web_search", "doi_lookup", "crossref_search"],
@@ -47,6 +54,7 @@ EVIDENCE_TOOL_MAP: dict[EvidenceType, list[str]] = {
 
 class SubQuestion(BaseModel):
     """A single atomic sub-question that needs evidence."""
+
     id: str
     question: str
     evidence_type: EvidenceType
@@ -56,6 +64,7 @@ class SubQuestion(BaseModel):
 
 class ResearchPlan(BaseModel):
     """System-structured plan: what evidence do we need?"""
+
     original_query: str
     sub_questions: list[SubQuestion]
     scope: str = ""  # Brief description of the research scope
@@ -72,9 +81,9 @@ class ResearchPlan(BaseModel):
     def get_ready_questions(self, completed_ids: set[str]) -> list[SubQuestion]:
         """Return sub-questions whose dependencies are all satisfied."""
         return [
-            sq for sq in self.sub_questions
-            if sq.id not in completed_ids
-            and all(dep in completed_ids for dep in sq.depends_on)
+            sq
+            for sq in self.sub_questions
+            if sq.id not in completed_ids and all(dep in completed_ids for dep in sq.depends_on)
         ]
 
 
@@ -103,7 +112,8 @@ Rules:
 - priority: 1=must answer, 2=should answer, 3=nice to have
 - depends_on: list of sub-question IDs that must be answered first
 - Generate 4-10 sub-questions to ensure thorough coverage.
-- For each key claim, create separate sub-questions that search different angles (e.g., one for definitions, one for empirical evidence, one for recent developments).
+- For each key claim, create separate sub-questions that search different angles \
+(e.g., one for definitions, one for empirical evidence, one for recent developments).
 - Make questions specific enough to search for. "What is X?" is better than "Understand X."
 """
 
@@ -152,13 +162,15 @@ class QueryDecomposer:
             except ValueError:
                 ev_type = EvidenceType.WEB_SOURCES
 
-            sub_questions.append(SubQuestion(
-                id=sq_raw.get("id", f"sq{i + 1}"),
-                question=sq_raw.get("question", ""),
-                evidence_type=ev_type,
-                depends_on=sq_raw.get("depends_on", []),
-                priority=min(max(sq_raw.get("priority", 1), 1), 3),
-            ))
+            sub_questions.append(
+                SubQuestion(
+                    id=sq_raw.get("id", f"sq{i + 1}"),
+                    question=sq_raw.get("question", ""),
+                    evidence_type=ev_type,
+                    depends_on=sq_raw.get("depends_on", []),
+                    priority=min(max(sq_raw.get("priority", 1), 1), 3),
+                )
+            )
 
         if not sub_questions:
             return self._fallback_plan(query)

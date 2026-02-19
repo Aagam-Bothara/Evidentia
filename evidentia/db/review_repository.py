@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -60,9 +60,7 @@ class ReviewRepository:
         await self._session.flush()
         return True
 
-    async def save_papers(
-        self, review_id: uuid.UUID, papers: list[PaperRecord]
-    ) -> None:
+    async def save_papers(self, review_id: uuid.UUID, papers: list[PaperRecord]) -> None:
         """Bulk-save papers from a completed review."""
         for paper in papers:
             row = ReviewPaperRow(
@@ -97,7 +95,7 @@ class ReviewRepository:
         if decision:
             stmt = stmt.where(ReviewPaperRow.screening_decision == decision)
         if not include_duplicates:
-            stmt = stmt.where(ReviewPaperRow.is_duplicate == False)
+            stmt = stmt.where(ReviewPaperRow.is_duplicate.is_(False))
 
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
@@ -142,5 +140,5 @@ class ReviewRepository:
         if elapsed_seconds is not None:
             row.elapsed_seconds = elapsed_seconds
         if status == "completed":
-            row.completed_at = datetime.now(timezone.utc)
+            row.completed_at = datetime.now(UTC)
         await self._session.flush()

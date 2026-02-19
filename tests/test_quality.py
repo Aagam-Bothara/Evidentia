@@ -17,7 +17,6 @@ from evidentia.review.quality import (
     extract_study_count,
 )
 
-
 # ── Mock LLM ─────────────────────────────────────────────────────────
 
 
@@ -369,28 +368,21 @@ class TestDetectHeuristicSignals:
 
     def test_funding_bias_high(self):
         """Industry-funded with no conflict disclosure = high bias."""
-        paper = _make_paper(
-            abstract="This study was funded by the pharma company for efficacy evaluation."
-        )
+        paper = _make_paper(abstract="This study was funded by the pharma company for efficacy evaluation.")
         signals = detect_heuristic_signals(paper)
         assert signals["funding_bias_risk"] == "high"
 
     def test_funding_bias_moderate(self):
         """Industry-funded with conflict disclosure = moderate bias."""
         paper = _make_paper(
-            abstract=(
-                "Supported by a grant from the pharma industry. "
-                "The authors report no conflict of interest."
-            )
+            abstract=("Supported by a grant from the pharma industry. The authors report no conflict of interest.")
         )
         signals = detect_heuristic_signals(paper)
         assert signals["funding_bias_risk"] == "moderate"
 
     def test_funding_bias_low(self):
         """Conflict disclosure without industry funding = low bias."""
-        paper = _make_paper(
-            abstract="The authors report no conflict of interest."
-        )
+        paper = _make_paper(abstract="The authors report no conflict of interest.")
         signals = detect_heuristic_signals(paper)
         assert signals["funding_bias_risk"] == "low"
 
@@ -795,8 +787,9 @@ class TestBuildCompositeScore:
         """Empty LLM data should still produce a valid score from heuristics only."""
         scorer = self._make_scorer()
         paper = _make_paper(title="A Cohort Study", abstract="200 participants")
-        heuristics = self._base_heuristics(study_design=StudyDesign.COHORT,
-                                            design_strength=DESIGN_STRENGTH[StudyDesign.COHORT])
+        heuristics = self._base_heuristics(
+            study_design=StudyDesign.COHORT, design_strength=DESIGN_STRENGTH[StudyDesign.COHORT]
+        )
 
         result = scorer._build_composite_score(paper, heuristics, {})
 
@@ -936,10 +929,12 @@ class TestScorePapers:
         llm = MockQualityLLM([response])
         scorer = QualityScorer(llm)
 
-        papers = [_make_paper(
-            title="Randomized controlled trial of aspirin",
-            abstract="We enrolled 200 participants in this RCT. Registered at ClinicalTrials.gov.",
-        )]
+        papers = [
+            _make_paper(
+                title="Randomized controlled trial of aspirin",
+                abstract="We enrolled 200 participants in this RCT. Registered at ClinicalTrials.gov.",
+            )
+        ]
         results = await scorer.score_papers(papers)
 
         assert len(results) == 1
@@ -949,18 +944,17 @@ class TestScorePapers:
 
     @pytest.mark.asyncio
     async def test_score_multiple_papers(self):
-        response = _quality_response([
-            _full_assessment(paper_index=0),
-            _full_assessment(paper_index=1),
-            _full_assessment(paper_index=2),
-        ])
+        response = _quality_response(
+            [
+                _full_assessment(paper_index=0),
+                _full_assessment(paper_index=1),
+                _full_assessment(paper_index=2),
+            ]
+        )
         llm = MockQualityLLM([response])
         scorer = QualityScorer(llm)
 
-        papers = [
-            _make_paper(title=f"Study {i}", abstract=f"{i*100} participants")
-            for i in range(3)
-        ]
+        papers = [_make_paper(title=f"Study {i}", abstract=f"{i * 100} participants") for i in range(3)]
         results = await scorer.score_papers(papers)
 
         assert len(results) == 3
@@ -975,10 +969,7 @@ class TestScorePapers:
         llm = MockQualityLLM([batch1, batch2])
         scorer = QualityScorer(llm)
 
-        papers = [
-            _make_paper(title=f"Study {i}", abstract=f"{100 + i} participants")
-            for i in range(8)
-        ]
+        papers = [_make_paper(title=f"Study {i}", abstract=f"{100 + i} participants") for i in range(8)]
         results = await scorer.score_papers(papers)
 
         assert len(results) == 8
@@ -990,10 +981,12 @@ class TestScorePapers:
         llm = FailingLLM()
         scorer = QualityScorer(llm)
 
-        papers = [_make_paper(
-            title="A meta-analysis of treatment outcomes",
-            abstract="We included 25 studies with 5000 participants total.",
-        )]
+        papers = [
+            _make_paper(
+                title="A meta-analysis of treatment outcomes",
+                abstract="We included 25 studies with 5000 participants total.",
+            )
+        ]
         results = await scorer.score_papers(papers)
 
         assert len(results) == 1
@@ -1007,10 +1000,12 @@ class TestScorePapers:
         llm = MockQualityLLM(["not valid json at all {{{"])
         scorer = QualityScorer(llm)
 
-        papers = [_make_paper(
-            title="Cohort study of diabetes",
-            abstract="A prospective cohort study with 300 patients.",
-        )]
+        papers = [
+            _make_paper(
+                title="Cohort study of diabetes",
+                abstract="A prospective cohort study with 300 patients.",
+            )
+        ]
         results = await scorer.score_papers(papers)
 
         assert len(results) == 1
@@ -1033,15 +1028,17 @@ class TestScorePapers:
         llm = MockQualityLLM([response])
         scorer = QualityScorer(llm)
 
-        papers = [_make_paper(
-            title="Cross-sectional survey",
-            abstract=(
-                "A cross-sectional study of 800 women. "
-                "Pre-registered on OSF. Data available on Zenodo. "
-                "Compared with a control group. "
-                "The authors declare no conflict of interest."
-            ),
-        )]
+        papers = [
+            _make_paper(
+                title="Cross-sectional survey",
+                abstract=(
+                    "A cross-sectional study of 800 women. "
+                    "Pre-registered on OSF. Data available on Zenodo. "
+                    "Compared with a control group. "
+                    "The authors declare no conflict of interest."
+                ),
+            )
+        ]
         results = await scorer.score_papers(papers)
         r = results[0]
 
@@ -1060,14 +1057,16 @@ class TestFormatPapers:
     """Tests for _format_papers static method."""
 
     def test_basic_formatting(self):
-        papers = [_make_paper(
-            title="Test Paper Title",
-            abstract="A short abstract.",
-            authors=["Alice", "Bob"],
-            published_date="2024-06-01",
-            journal="Nature",
-            citation_count=42,
-        )]
+        papers = [
+            _make_paper(
+                title="Test Paper Title",
+                abstract="A short abstract.",
+                authors=["Alice", "Bob"],
+                published_date="2024-06-01",
+                journal="Nature",
+                citation_count=42,
+            )
+        ]
         text = QualityScorer._format_papers(papers)
 
         assert "[0] Title: Test Paper Title" in text

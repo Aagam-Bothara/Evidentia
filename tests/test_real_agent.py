@@ -9,17 +9,16 @@ These tests verify that:
 """
 
 import json
+
 import pytest
 
-from evidentia.agent.agent import EvidentiAgent, AgentOutput
+from evidentia.agent.agent import EvidentiAgent
 from evidentia.agent.decomposer import (
     EvidenceType,
-    EVIDENCE_TOOL_MAP,
     QueryDecomposer,
-    ResearchPlan,
     SubQuestion,
 )
-from evidentia.agent.evidence_graph import EvidenceFragment, EvidenceGraph, EvidenceStatus
+from evidentia.agent.evidence_graph import EvidenceFragment, EvidenceGraph
 from evidentia.agent.executor import ToolExecutor
 from evidentia.agent.synthesizer import Synthesizer
 from evidentia.agent.tool_selector import ToolSelector
@@ -27,8 +26,8 @@ from evidentia.core.llm import BaseLLM, LLMResponse
 from evidentia.core.models import ClaimConfidence
 from evidentia.tools.base import BaseTool, ToolMetadata, ToolRegistry
 
-
 # ── Mock LLM (constrained — only used for decomposition + synthesis) ──
+
 
 class MockLLM(BaseLLM):
     def __init__(self, responses: list[str] | None = None) -> None:
@@ -79,23 +78,50 @@ class MockSemanticScholar(BaseTool):
     )
 
     async def execute(self, input_data):
-        return {"success": True, "data": [
-            {"title": "Paper C", "authors": ["Author 3"], "url": "https://s2.org/1", "abstract": "Fallback result."},
-        ]}
+        return {
+            "success": True,
+            "data": [
+                {
+                    "title": "Paper C",
+                    "authors": ["Author 3"],
+                    "url": "https://s2.org/1",
+                    "abstract": "Fallback result.",
+                },
+            ],
+        }
 
 
 # ── Test 1: System decomposes queries into structured sub-questions ──
 
+
 @pytest.mark.asyncio
 async def test_decomposer_produces_structured_plan():
     """The decomposer constrains LLM output to a fixed schema."""
-    llm = MockLLM([json.dumps({
-        "scope": "Recent advances in protein folding",
-        "sub_questions": [
-            {"id": "sq1", "question": "What are recent protein folding methods?", "evidence_type": "academic_papers", "depends_on": [], "priority": 1},
-            {"id": "sq2", "question": "How does AlphaFold compare to traditional methods?", "evidence_type": "comparison", "depends_on": ["sq1"], "priority": 1},
-        ],
-    })])
+    llm = MockLLM(
+        [
+            json.dumps(
+                {
+                    "scope": "Recent advances in protein folding",
+                    "sub_questions": [
+                        {
+                            "id": "sq1",
+                            "question": "What are recent protein folding methods?",
+                            "evidence_type": "academic_papers",
+                            "depends_on": [],
+                            "priority": 1,
+                        },
+                        {
+                            "id": "sq2",
+                            "question": "How does AlphaFold compare to traditional methods?",
+                            "evidence_type": "comparison",
+                            "depends_on": ["sq1"],
+                            "priority": 1,
+                        },
+                    ],
+                }
+            )
+        ]
+    )
 
     decomposer = QueryDecomposer(llm)
     plan = await decomposer.decompose("What are the latest advances in protein folding?")
@@ -119,6 +145,7 @@ async def test_decomposer_fallback_on_bad_llm_output():
 
 
 # ── Test 2: System selects tools based on evidence type mapping ──────
+
 
 def test_tool_selector_picks_correct_tools():
     """Tool selection is deterministic — based on evidence_type, not LLM."""
@@ -163,6 +190,7 @@ def test_tool_selector_falls_back_after_failure():
 
 # ── Test 3: Evidence graph tracks state and detects gaps ─────────────
 
+
 def test_evidence_graph_tracks_sufficiency():
     """System decides evidence sufficiency by graph analysis, not LLM."""
     graph = EvidenceGraph(min_evidence_per_question=2)
@@ -205,9 +233,9 @@ def test_evidence_graph_deduplicates():
 
 # ── Test 4: System calculates confidence, not LLM ───────────────────
 
+
 def test_confidence_scoring_is_system_logic():
     """Confidence is calculated by citation count, not LLM opinion."""
-    from evidentia.agent.synthesizer import Synthesizer
     from evidentia.core.models import Citation, EvidenceSpan
 
     # 3+ unique sources with evidence spans = HIGH
@@ -236,6 +264,7 @@ def test_confidence_scoring_is_system_logic():
 
 # ── Test 5: Executor retries and handles failures ────────────────────
 
+
 @pytest.mark.asyncio
 async def test_executor_retries_on_failure():
     """Executor retries failed tools — system logic, not LLM."""
@@ -249,6 +278,7 @@ async def test_executor_retries_on_failure():
     graph.add_question("sq1", "Test")
 
     from evidentia.agent.tool_selector import ToolSelection
+
     selection = ToolSelection(question_id="sq1", tool_name="arxiv_search", query="test", reason="test")
 
     results = await executor.execute_batch([selection], graph)
@@ -260,29 +290,42 @@ async def test_executor_retries_on_failure():
 
 # ── Test 6: Full agent pipeline is system-driven ─────────────────────
 
+
 @pytest.mark.asyncio
 async def test_full_agent_is_system_driven():
     """The full agent: system decomposes, selects tools, executes, checks, synthesizes."""
-    llm = MockLLM([
-        # Response 1: decomposition
-        json.dumps({
-            "scope": "AI advances",
-            "sub_questions": [
-                {"id": "sq1", "question": "latest AI papers", "evidence_type": "academic_papers", "depends_on": [], "priority": 1},
-            ],
-        }),
-        # Response 2: synthesis
-        json.dumps({
-            "summary": "AI research has advanced significantly.",
-            "claims": [
+    llm = MockLLM(
+        [
+            # Response 1: decomposition
+            json.dumps(
                 {
-                    "statement": "Recent papers show advances in AI.",
-                    "based_on_questions": ["sq1"],
-                    "key_evidence_indices": [0, 1],
+                    "scope": "AI advances",
+                    "sub_questions": [
+                        {
+                            "id": "sq1",
+                            "question": "latest AI papers",
+                            "evidence_type": "academic_papers",
+                            "depends_on": [],
+                            "priority": 1,
+                        },
+                    ],
                 }
-            ],
-        }),
-    ])
+            ),
+            # Response 2: synthesis
+            json.dumps(
+                {
+                    "summary": "AI research has advanced significantly.",
+                    "claims": [
+                        {
+                            "statement": "Recent papers show advances in AI.",
+                            "based_on_questions": ["sq1"],
+                            "key_evidence_indices": [0, 1],
+                        }
+                    ],
+                }
+            ),
+        ]
+    )
 
     registry = ToolRegistry()
     registry.register(MockTool())  # arxiv_search with mock results
@@ -301,18 +344,32 @@ async def test_full_agent_is_system_driven():
 @pytest.mark.asyncio
 async def test_agent_streams_events():
     """Agent emits structured events for the UI."""
-    llm = MockLLM([
-        json.dumps({
-            "scope": "Test",
-            "sub_questions": [
-                {"id": "sq1", "question": "test query", "evidence_type": "academic_papers", "depends_on": [], "priority": 1},
-            ],
-        }),
-        json.dumps({
-            "summary": "Done.",
-            "claims": [{"statement": "Test claim.", "based_on_questions": ["sq1"], "key_evidence_indices": [0]}],
-        }),
-    ])
+    llm = MockLLM(
+        [
+            json.dumps(
+                {
+                    "scope": "Test",
+                    "sub_questions": [
+                        {
+                            "id": "sq1",
+                            "question": "test query",
+                            "evidence_type": "academic_papers",
+                            "depends_on": [],
+                            "priority": 1,
+                        },
+                    ],
+                }
+            ),
+            json.dumps(
+                {
+                    "summary": "Done.",
+                    "claims": [
+                        {"statement": "Test claim.", "based_on_questions": ["sq1"], "key_evidence_indices": [0]}
+                    ],
+                }
+            ),
+        ]
+    )
 
     registry = ToolRegistry()
     registry.register(MockTool())

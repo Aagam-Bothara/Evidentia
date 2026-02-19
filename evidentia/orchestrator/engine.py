@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any
+from datetime import UTC, datetime
 
 from evidentia.core.config import Settings
-from evidentia.core.exceptions import BudgetExhaustedError, OrchestrationError
+from evidentia.core.exceptions import BudgetExhaustedError
 from evidentia.core.logging import get_logger
 from evidentia.core.models import Run, RunStatus, StepStatus
 from evidentia.orchestrator.decision import Decision, DecisionContext, DecisionEngine
@@ -82,16 +81,16 @@ class OrchestrationEngine:
             else:
                 run.status = RunStatus.FAILED
 
-            run.completed_at = datetime.now(timezone.utc)
+            run.completed_at = datetime.now(UTC)
 
         except BudgetExhaustedError:
             run.status = RunStatus.FAILED
-            run.completed_at = datetime.now(timezone.utc)
+            run.completed_at = datetime.now(UTC)
             logger.error("budget_exhausted", run_id=run.id)
 
         except Exception as exc:
             run.status = RunStatus.FAILED
-            run.completed_at = datetime.now(timezone.utc)
+            run.completed_at = datetime.now(UTC)
             logger.error("run_failed", run_id=run.id, error=str(exc))
 
         logger.info(

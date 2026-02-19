@@ -9,8 +9,6 @@ Storage: JSON-lines file (one entry per feedback event). No external DB needed.
 
 from __future__ import annotations
 
-import json
-import os
 import time
 from pathlib import Path
 from typing import Any
@@ -150,9 +148,7 @@ class FeedbackStore:
             accuracy_estimate=accuracy,
         )
 
-    def get_training_pairs(
-        self, limit: int = 1000
-    ) -> list[dict[str, Any]]:
+    def get_training_pairs(self, limit: int = 1000) -> list[dict[str, Any]]:
         """Export feedback as training pairs for fine-tuning.
 
         Each pair contains the paper context + the human-corrected decision.
@@ -163,19 +159,21 @@ class FeedbackStore:
 
         pairs: list[dict[str, Any]] = []
         for entry in overrides[:limit]:
-            pairs.append({
-                "input": {
-                    "title": entry.paper_title,
-                    "abstract": entry.paper_abstract,
-                    "research_question": entry.research_question,
-                    "inclusion_criteria": entry.inclusion_criteria,
-                    "exclusion_criteria": entry.exclusion_criteria,
-                },
-                "label": entry.user_decision,
-                "reason": entry.user_reason or "",
-                "original_prediction": entry.original_decision,
-                "original_confidence": entry.original_confidence,
-            })
+            pairs.append(
+                {
+                    "input": {
+                        "title": entry.paper_title,
+                        "abstract": entry.paper_abstract,
+                        "research_question": entry.research_question,
+                        "inclusion_criteria": entry.inclusion_criteria,
+                        "exclusion_criteria": entry.exclusion_criteria,
+                    },
+                    "label": entry.user_decision,
+                    "reason": entry.user_reason or "",
+                    "original_prediction": entry.original_decision,
+                    "original_confidence": entry.original_confidence,
+                }
+            )
 
         return pairs
 
@@ -186,7 +184,7 @@ class FeedbackStore:
 
         entries: list[FeedbackEntry] = []
         try:
-            with open(self._feedback_file, "r", encoding="utf-8") as f:
+            with open(self._feedback_file, encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if line:

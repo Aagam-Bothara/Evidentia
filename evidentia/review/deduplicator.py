@@ -18,9 +18,7 @@ class Deduplicator:
     def __init__(self, title_threshold: float = 0.85) -> None:
         self._title_threshold = title_threshold
 
-    def deduplicate(
-        self, papers: list[PaperRecord]
-    ) -> tuple[list[PaperRecord], list[PaperRecord]]:
+    def deduplicate(self, papers: list[PaperRecord]) -> tuple[list[PaperRecord], list[PaperRecord]]:
         """Partition papers into unique and duplicate sets.
 
         Returns:

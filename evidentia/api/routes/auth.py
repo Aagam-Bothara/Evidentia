@@ -228,6 +228,7 @@ async def regenerate_api_key(user: AuthenticatedUser = Depends(require_auth)):
 
     # Fallback: generate key in memory
     import secrets
+
     new_key = f"ev_{secrets.token_hex(24)}"
     email = user.email.lower()
     if email in _user_store:

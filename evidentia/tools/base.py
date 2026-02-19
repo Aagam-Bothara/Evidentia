@@ -8,7 +8,7 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel
 
-from evidentia.core.exceptions import ToolSchemaError, ToolTimeoutError
+from evidentia.core.exceptions import ToolTimeoutError
 
 
 class ToolMetadata(BaseModel):
@@ -57,11 +57,11 @@ class BaseTool(ABC):
                 self.execute(input_data),
                 timeout=self.metadata.timeout_seconds,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError as exc:
             raise ToolTimeoutError(
                 f"Tool '{self.metadata.name}' timed out after {self.metadata.timeout_seconds}s",
                 tool_name=self.metadata.name,
-            )
+            ) from exc
 
 
 class ToolRegistry:

@@ -1,11 +1,11 @@
 """Tests for the retrieval system."""
 
+import pytest
+
 from evidentia.core.models import Source, SourceType
 from evidentia.retrieval.hybrid_search import HybridSearchEngine
 from evidentia.retrieval.reranker import Reranker
 from evidentia.retrieval.store import DocumentStore
-
-import pytest
 
 
 @pytest.fixture
@@ -14,17 +14,28 @@ def sample_sources() -> list[Source]:
         Source(
             source_type=SourceType.PAPER,
             title="Attention Is All You Need",
-            content="The dominant sequence transduction models are based on complex recurrent or convolutional neural networks. We propose a new simple network architecture the Transformer based solely on attention mechanisms.",
+            content=(
+                "The dominant sequence transduction models are based on"
+                " complex recurrent or convolutional neural networks."
+                " We propose a new simple network architecture the"
+                " Transformer based solely on attention mechanisms."
+            ),
         ),
         Source(
             source_type=SourceType.PAPER,
             title="BERT: Pre-training of Deep Bidirectional Transformers",
-            content="We introduce BERT a new language representation model. BERT is designed to pre-train deep bidirectional representations from unlabeled text.",
+            content=(
+                "We introduce BERT a new language representation model."
+                " BERT is designed to pre-train deep bidirectional"
+                " representations from unlabeled text."
+            ),
         ),
         Source(
             source_type=SourceType.WEBPAGE,
             title="Python Tutorial",
-            content="Python is a programming language that lets you work quickly and integrate systems more effectively.",
+            content=(
+                "Python is a programming language that lets you work quickly and integrate systems more effectively."
+            ),
         ),
     ]
 

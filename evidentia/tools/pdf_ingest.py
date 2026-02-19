@@ -127,9 +127,7 @@ class PDFIngestTool(BaseTool):
 
         return tmp_path
 
-    def _extract_with_pymupdf(
-        self, pdf_path: str
-    ) -> tuple[list[str], int, dict[str, Any]]:
+    def _extract_with_pymupdf(self, pdf_path: str) -> tuple[list[str], int, dict[str, Any]]:
         """Extract per-page text and document metadata using pymupdf (fitz).
 
         Returns:

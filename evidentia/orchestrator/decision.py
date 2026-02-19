@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any
 
 from pydantic import BaseModel
 
 from evidentia.core.logging import get_logger
-from evidentia.core.models import Claim, ExecutionPlan, Run, RunStatus, StepResult, StepStatus
+from evidentia.core.models import Run, StepResult, StepStatus
 
 logger = get_logger(__name__)
 

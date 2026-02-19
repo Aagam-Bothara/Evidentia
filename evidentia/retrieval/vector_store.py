@@ -66,7 +66,7 @@ class VectorStore:
         texts = [doc.content for doc in documents]
         vectors = self._embedder.embed_batch(texts)
 
-        for doc, vec in zip(documents, vectors):
+        for doc, vec in zip(documents, vectors, strict=False):
             stored = _StoredVector(
                 doc_id=doc.id,
                 title=doc.title,
@@ -93,7 +93,7 @@ class VectorStore:
         texts = [c["text"] for c in chunks]
         vectors = self._embedder.embed_batch(texts)
 
-        for chunk, vec in zip(chunks, vectors):
+        for chunk, vec in zip(chunks, vectors, strict=False):
             stored = _StoredVector(
                 doc_id=chunk["doc_id"],
                 title=chunk.get("title", ""),
@@ -124,9 +124,7 @@ class VectorStore:
         query_vector = self._embedder.embed(query)
         return await self.search_by_vector(query_vector, top_k=top_k)
 
-    async def search_by_vector(
-        self, vector: list[float], top_k: int = 10
-    ) -> list[VectorSearchResult]:
+    async def search_by_vector(self, vector: list[float], top_k: int = 10) -> list[VectorSearchResult]:
         """Search by a raw embedding vector.
 
         This is useful when the caller already has an embedding (e.g.
@@ -195,7 +193,7 @@ class VectorStore:
         simple dot product.  The full formula is kept for safety when
         non-normalised vectors are supplied.
         """
-        dot = sum(x * y for x, y in zip(a, b))
+        dot = sum(x * y for x, y in zip(a, b, strict=False))
         norm_a = math.sqrt(sum(x * x for x in a))
         norm_b = math.sqrt(sum(x * x for x in b))
         if norm_a == 0.0 or norm_b == 0.0:

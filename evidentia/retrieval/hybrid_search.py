@@ -6,7 +6,7 @@ import math
 from collections import Counter
 from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from evidentia.core.logging import get_logger
 from evidentia.core.models import Source
@@ -82,9 +82,7 @@ class HybridSearchEngine:
                 df = self._doc_freqs.get(qt, 0)
                 idf = math.log((n - df + 0.5) / (df + 0.5) + 1.0)
                 numerator = tf * (self._k1 + 1)
-                denominator = tf + self._k1 * (
-                    1 - self._b + self._b * doc_len / max(self._avg_doc_len, 1)
-                )
+                denominator = tf + self._k1 * (1 - self._b + self._b * doc_len / max(self._avg_doc_len, 1))
                 score += idf * numerator / denominator
 
             scores.append((idx, score))

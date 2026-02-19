@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
-from typing import Any
+from datetime import UTC, datetime
 
-from evidentia.core.exceptions import BudgetExhaustedError, ToolExecutionError
+from evidentia.core.exceptions import BudgetExhaustedError
 from evidentia.core.logging import get_logger
 from evidentia.core.models import ExecutionPlan, PlanStep, StepResult, StepStatus
 from evidentia.tools.base import BaseTool
@@ -52,7 +51,7 @@ class ToolRouter:
             batch_results = await asyncio.gather(*tasks, return_exceptions=True)
 
             next_ready: list[PlanStep] = []
-            for step, result in zip(ready, batch_results):
+            for step, result in zip(ready, batch_results, strict=False):
                 if isinstance(result, Exception):
                     sr = StepResult(
                         step_id=step.id,
@@ -101,12 +100,10 @@ class ToolRouter:
         last_error: str | None = None
         for attempt in range(self._max_retries + 1):
             if self._total_calls >= self._max_total_calls:
-                raise BudgetExhaustedError(
-                    f"Exceeded max tool calls ({self._max_total_calls})"
-                )
+                raise BudgetExhaustedError(f"Exceeded max tool calls ({self._max_total_calls})")
 
             self._total_calls += 1
-            started = datetime.now(timezone.utc)
+            started = datetime.now(UTC)
 
             try:
                 logger.info(
@@ -122,7 +119,7 @@ class ToolRouter:
                     status=StepStatus.SUCCESS,
                     output=output,
                     started_at=started,
-                    completed_at=datetime.now(timezone.utc),
+                    completed_at=datetime.now(UTC),
                     retries=attempt,
                 )
             except Exception as exc:

@@ -40,12 +40,14 @@ async def health_check() -> HealthResponse:
 async def readiness_check() -> ReadinessResponse:
     """Readiness probe — checks database and Redis connectivity."""
     import time
+
     settings = get_settings()
 
     # Check database
     db_status = ComponentStatus(status="unavailable")
     try:
         from evidentia.db.engine import check_db
+
         start = time.monotonic()
         if await check_db():
             db_status = ComponentStatus(
@@ -59,6 +61,7 @@ async def readiness_check() -> ReadinessResponse:
     redis_status = ComponentStatus(status="unavailable")
     try:
         from evidentia.cache import check_redis
+
         start = time.monotonic()
         if await check_redis():
             redis_status = ComponentStatus(

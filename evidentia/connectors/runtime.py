@@ -80,9 +80,7 @@ class ConnectorRuntime:
                 resp.raise_for_status()
                 return ExecutionResponse.model_validate(resp.json())
             except httpx.HTTPError as exc:
-                raise ConnectorRuntimeError(
-                    f"Failed to reach connector runtime at {self._runtime_url}: {exc}"
-                ) from exc
+                raise ConnectorRuntimeError(f"Failed to reach connector runtime at {self._runtime_url}: {exc}") from exc
 
     async def health_check(self) -> bool:
         """Check if the runtime is reachable."""

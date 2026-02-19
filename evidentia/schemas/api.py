@@ -2,22 +2,20 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 from evidentia.core.models import Claim, ExecutionPlan, RunStatus, StepResult
 
-
 # ── Query ────────────────────────────────────────────────────────────
+
 
 class QueryRequest(BaseModel):
     """Incoming research query from user."""
 
     query: str = Field(..., min_length=1, max_length=5000)
-    tools: list[str] | None = Field(
-        default=None, description="Restrict to specific tool names. None = auto-select."
-    )
+    tools: list[str] | None = Field(default=None, description="Restrict to specific tool names. None = auto-select.")
     max_steps: int = Field(default=20, ge=1, le=100)
     project_id: str | None = None
 
@@ -36,6 +34,7 @@ class QueryResponse(BaseModel):
 
 # ── Run trace ────────────────────────────────────────────────────────
 
+
 class RunTraceResponse(BaseModel):
     """Full trace of a past run for replay/inspection."""
 
@@ -49,6 +48,7 @@ class RunTraceResponse(BaseModel):
 
 
 # ── Tools ────────────────────────────────────────────────────────────
+
 
 class ToolListItem(BaseModel):
     """Summary of an available tool."""
@@ -66,6 +66,7 @@ class ToolListResponse(BaseModel):
 
 # ── Auth ─────────────────────────────────────────────────────────────
 
+
 class TokenRequest(BaseModel):
     username: str
     password: str
@@ -78,6 +79,7 @@ class TokenResponse(BaseModel):
 
 
 # ── Health ───────────────────────────────────────────────────────────
+
 
 class HealthResponse(BaseModel):
     status: str = "ok"

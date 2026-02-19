@@ -4,10 +4,8 @@ import json
 import time
 
 import pytest
-from pydantic import ValidationError
 
 from evidentia.review.feedback import FeedbackEntry, FeedbackStats, FeedbackStore
-
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
@@ -170,9 +168,7 @@ class TestRecordOverride:
     def test_record_returns_feedback_entry(self, tmp_path):
         """record_override should return a populated FeedbackEntry."""
         store = FeedbackStore(data_dir=tmp_path)
-        entry = _record_sample_override(
-            store, user_id="u42", paper_title="Return Check"
-        )
+        entry = _record_sample_override(store, user_id="u42", paper_title="Return Check")
         assert isinstance(entry, FeedbackEntry)
         assert entry.user_id == "u42"
         assert entry.paper_title == "Return Check"
@@ -282,16 +278,10 @@ class TestGetStats:
         store = FeedbackStore(data_dir=tmp_path)
 
         # 2 agreements (user decision matches original)
-        _record_sample_override(
-            store, original_decision="include", user_decision="include"
-        )
-        _record_sample_override(
-            store, original_decision="exclude", user_decision="exclude"
-        )
+        _record_sample_override(store, original_decision="include", user_decision="include")
+        _record_sample_override(store, original_decision="exclude", user_decision="exclude")
         # 1 override
-        _record_sample_override(
-            store, original_decision="exclude", user_decision="include"
-        )
+        _record_sample_override(store, original_decision="exclude", user_decision="include")
 
         stats = store.get_stats()
         # 2 agreements out of 3 total
@@ -383,9 +373,7 @@ class TestGetStats:
         """If every entry is an agreement, accuracy should be 1.0."""
         store = FeedbackStore(data_dir=tmp_path)
         for _ in range(5):
-            _record_sample_override(
-                store, original_decision="include", user_decision="include"
-            )
+            _record_sample_override(store, original_decision="include", user_decision="include")
 
         stats = store.get_stats()
         assert stats.accuracy_estimate == 1.0
@@ -445,9 +433,7 @@ class TestGetTrainingPairs:
         store = FeedbackStore(data_dir=tmp_path)
 
         # Agreement
-        _record_sample_override(
-            store, original_decision="include", user_decision="include"
-        )
+        _record_sample_override(store, original_decision="include", user_decision="include")
         # Override
         _record_sample_override(
             store,
@@ -481,9 +467,7 @@ class TestGetTrainingPairs:
     def test_training_pairs_limit_larger_than_data(self, tmp_path):
         """If limit exceeds available overrides, return all overrides."""
         store = FeedbackStore(data_dir=tmp_path)
-        _record_sample_override(
-            store, original_decision="exclude", user_decision="include"
-        )
+        _record_sample_override(store, original_decision="exclude", user_decision="include")
 
         pairs = store.get_training_pairs(limit=1000)
         assert len(pairs) == 1
@@ -587,7 +571,7 @@ class TestStoreInitialization:
         nested_dir = tmp_path / "deeply" / "nested" / "dir"
         assert not nested_dir.exists()
 
-        store = FeedbackStore(data_dir=nested_dir)
+        _store = FeedbackStore(data_dir=nested_dir)
         assert nested_dir.exists()
 
     def test_uses_existing_directory(self, tmp_path):

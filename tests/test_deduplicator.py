@@ -1,10 +1,7 @@
 """Tests for the systematic review deduplicator."""
 
-import pytest
-
 from evidentia.review.deduplicator import Deduplicator
 from evidentia.review.models import PaperRecord
-
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
@@ -181,9 +178,24 @@ def test_triple_duplicate():
     """Three copies of the same paper from different databases."""
     dedup = Deduplicator()
     papers = [
-        _paper("Systematic review of exercise interventions", doi="10.1234/ex", source_db="pubmed_search", source_id="pm1"),
-        _paper("Systematic review of exercise interventions", doi="10.1234/ex", source_db="openalex_search", source_id="oa1"),
-        _paper("Systematic review of exercise interventions", doi="10.1234/ex", source_db="semantic_scholar", source_id="ss1"),
+        _paper(
+            "Systematic review of exercise interventions",
+            doi="10.1234/ex",
+            source_db="pubmed_search",
+            source_id="pm1",
+        ),
+        _paper(
+            "Systematic review of exercise interventions",
+            doi="10.1234/ex",
+            source_db="openalex_search",
+            source_id="oa1",
+        ),
+        _paper(
+            "Systematic review of exercise interventions",
+            doi="10.1234/ex",
+            source_db="semantic_scholar",
+            source_id="ss1",
+        ),
     ]
     unique, dups = dedup.deduplicate(papers)
     assert len(unique) == 1

@@ -3,20 +3,21 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
-
 # ── Identifiers ──────────────────────────────────────────────────────
+
 
 def new_id() -> str:
     return uuid.uuid4().hex
 
 
 # ── Run state ────────────────────────────────────────────────────────
+
 
 class RunStatus(str, Enum):
     PENDING = "pending"
@@ -33,11 +34,11 @@ class Run(BaseModel):
     id: str = Field(default_factory=new_id)
     query: str
     status: RunStatus = RunStatus.PENDING
-    plan: Optional[ExecutionPlan] = None
+    plan: ExecutionPlan | None = None
     steps: list[StepResult] = Field(default_factory=list)
     claims: list[Claim] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    completed_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    completed_at: datetime | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     @property
@@ -48,6 +49,7 @@ class Run(BaseModel):
 
 
 # ── Planning ─────────────────────────────────────────────────────────
+
 
 class PlanStep(BaseModel):
     """A single step in an execution plan."""
@@ -68,6 +70,7 @@ class ExecutionPlan(BaseModel):
 
 # ── Tool execution ───────────────────────────────────────────────────
 
+
 class StepStatus(str, Enum):
     PENDING = "pending"
     RUNNING = "running"
@@ -83,21 +86,22 @@ class StepResult(BaseModel):
     tool_name: str
     status: StepStatus = StepStatus.PENDING
     output: Any = None
-    error: Optional[str] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    error: str | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
     retries: int = 0
 
 
 # ── Claims & citations ──────────────────────────────────────────────
+
 
 class EvidenceSpan(BaseModel):
     """A precise text snippet that supports or contradicts a claim."""
 
     source_id: str
     text: str
-    start_offset: Optional[int] = None
-    end_offset: Optional[int] = None
+    start_offset: int | None = None
+    end_offset: int | None = None
 
 
 class Citation(BaseModel):
@@ -106,9 +110,9 @@ class Citation(BaseModel):
     source_id: str
     title: str
     authors: list[str] = Field(default_factory=list)
-    url: Optional[str] = None
-    doi: Optional[str] = None
-    published_date: Optional[str] = None
+    url: str | None = None
+    doi: str | None = None
+    published_date: str | None = None
 
 
 class ClaimConfidence(str, Enum):
@@ -131,6 +135,7 @@ class Claim(BaseModel):
 
 # ── Source documents ─────────────────────────────────────────────────
 
+
 class SourceType(str, Enum):
     PAPER = "paper"
     WEBPAGE = "webpage"
@@ -145,8 +150,8 @@ class Source(BaseModel):
     source_type: SourceType
     title: str
     content: str = ""
-    content_hash: Optional[str] = None
-    url: Optional[str] = None
-    doi: Optional[str] = None
+    content_hash: str | None = None
+    url: str | None = None
+    doi: str | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
-    retrieved_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    retrieved_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

@@ -63,8 +63,8 @@ async def export_citations(
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported format: {request.format}")
 
-    except ImportError:
-        raise HTTPException(status_code=501, detail="Export module not available.")
+    except ImportError as exc:
+        raise HTTPException(status_code=501, detail="Export module not available.") from exc
     except Exception as exc:
         logger.error("export_failed", error=str(exc))
-        raise HTTPException(status_code=500, detail=f"Export failed: {exc}")
+        raise HTTPException(status_code=500, detail=f"Export failed: {exc}") from exc

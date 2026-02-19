@@ -7,7 +7,6 @@ import pytest
 from evidentia.core.models import Citation, Claim, ClaimConfidence, EvidenceSpan
 from evidentia.export.citations import CitationExporter
 
-
 # ── Fixtures ────────────────────────────────────────────────────────
 
 

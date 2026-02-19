@@ -20,6 +20,7 @@ async def get_redis():
     if _redis_client is None:
         try:
             import redis.asyncio as aioredis
+
             settings = get_settings()
             _redis_client = aioredis.from_url(
                 settings.redis_url,
@@ -60,9 +61,9 @@ class RedisCache:
     """Cache with TTL for tool results."""
 
     # TTLs in seconds
-    TOOL_TTL = 3600       # 1 hour for search results
-    DOI_TTL = 86400       # 24 hours for DOI lookups
-    DEFAULT_TTL = 1800    # 30 minutes default
+    TOOL_TTL = 3600  # 1 hour for search results
+    DOI_TTL = 86400  # 24 hours for DOI lookups
+    DEFAULT_TTL = 1800  # 30 minutes default
 
     TOOL_TTLS: dict[str, int] = {
         "arxiv_search": TOOL_TTL,

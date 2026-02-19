@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
-import sys
 
 import click
 from rich.console import Console
@@ -67,6 +65,7 @@ def query(query: str, tools: str | None, max_steps: int, output: str | None) -> 
 
         if output:
             import json as json_mod
+
             with open(output, "w") as f:
                 json_mod.dump(result.to_dict(), f, indent=2, default=str)
             console.print(f"[dim]Saved to {output}[/dim]")

@@ -11,14 +11,13 @@ decide what claims exist or what their confidence is.
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
 from evidentia.agent.decomposer import ResearchPlan
 from evidentia.agent.evidence_graph import EvidenceFragment, EvidenceGraph, SubQuestionState
 from evidentia.core.llm import BaseLLM
 from evidentia.core.logging import get_logger
-from evidentia.core.models import Claim, ClaimConfidence, Citation, EvidenceSpan
+from evidentia.core.models import Citation, Claim, ClaimConfidence, EvidenceSpan
 
 logger = get_logger(__name__)
 
@@ -120,10 +119,7 @@ class Synthesizer:
                 evidence_text += f"\n    Content: {frag.snippet[:500]}"
             evidence_text += "\n"
 
-        questions_text = "\n".join(
-            f"- {sq.question} [id={sq.id}]"
-            for sq in plan.sub_questions
-        )
+        questions_text = "\n".join(f"- {sq.question} [id={sq.id}]" for sq in plan.sub_questions)
 
         try:
             response = await self._llm.chat(
@@ -165,18 +161,22 @@ class Synthesizer:
         for idx in evidence_indices:
             if 0 <= idx < len(all_evidence):
                 frag = all_evidence[idx]
-                citations.append(Citation(
-                    source_id=frag.doi or frag.url or frag.title,
-                    title=frag.title,
-                    authors=frag.authors,
-                    url=frag.url or None,
-                    doi=frag.doi or None,
-                ))
-                if frag.snippet:
-                    evidence_spans.append(EvidenceSpan(
+                citations.append(
+                    Citation(
                         source_id=frag.doi or frag.url or frag.title,
-                        text=frag.snippet[:500],
-                    ))
+                        title=frag.title,
+                        authors=frag.authors,
+                        url=frag.url or None,
+                        doi=frag.doi or None,
+                    )
+                )
+                if frag.snippet:
+                    evidence_spans.append(
+                        EvidenceSpan(
+                            source_id=frag.doi or frag.url or frag.title,
+                            text=frag.snippet[:500],
+                        )
+                    )
                 source_tools.append(frag.source_tool)
 
         # SYSTEM calculates confidence based on evidence quantity + diversity
@@ -250,16 +250,16 @@ class Synthesizer:
                 for e in state.evidence[:5]
             ]
             spans = [
-                EvidenceSpan(source_id=e.url or e.title, text=e.snippet[:300])
-                for e in state.evidence[:5]
-                if e.snippet
+                EvidenceSpan(source_id=e.url or e.title, text=e.snippet[:300]) for e in state.evidence[:5] if e.snippet
             ]
-            claims.append(Claim(
-                statement=f"Evidence found for: {state.question}",
-                confidence=ClaimConfidence.MEDIUM if len(citations) >= 2 else ClaimConfidence.LOW,
-                citations=citations,
-                evidence_spans=spans,
-            ))
+            claims.append(
+                Claim(
+                    statement=f"Evidence found for: {state.question}",
+                    confidence=ClaimConfidence.MEDIUM if len(citations) >= 2 else ClaimConfidence.LOW,
+                    citations=citations,
+                    evidence_spans=spans,
+                )
+            )
         return claims
 
 

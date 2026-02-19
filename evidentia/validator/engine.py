@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from evidentia.core.logging import get_logger
 from evidentia.core.models import StepResult, StepStatus
 

@@ -53,6 +53,7 @@ def _make_response(status_code: int, data: dict, headers: dict | None = None) ->
 @pytest.mark.asyncio
 async def test_crossref_search_success(monkeypatch):
     """Test successful CrossRef search."""
+
     async def mock_get(self, url, **kwargs):
         return _make_response(200, CROSSREF_RESPONSE)
 
@@ -76,6 +77,7 @@ async def test_crossref_search_success(monkeypatch):
 @pytest.mark.asyncio
 async def test_crossref_online_date_fallback(monkeypatch):
     """Test that published-online is used when published-print is missing."""
+
     async def mock_get(self, url, **kwargs):
         return _make_response(200, CROSSREF_RESPONSE)
 
@@ -91,6 +93,7 @@ async def test_crossref_online_date_fallback(monkeypatch):
 @pytest.mark.asyncio
 async def test_crossref_empty_results(monkeypatch):
     """Test empty search results."""
+
     async def mock_get(self, url, **kwargs):
         return _make_response(200, {"status": "ok", "message": {"items": []}})
 
@@ -120,6 +123,7 @@ async def test_crossref_max_results_param(monkeypatch):
 @pytest.mark.asyncio
 async def test_crossref_rate_limit_error(monkeypatch):
     """Test 429 error propagation with status code."""
+
     async def mock_get(self, url, **kwargs):
         resp = _make_response(429, {"error": "rate limited"}, headers={"Retry-After": "3"})
         raise httpx.HTTPStatusError("429", request=resp.request, response=resp)
@@ -127,6 +131,7 @@ async def test_crossref_rate_limit_error(monkeypatch):
     monkeypatch.setattr(httpx.AsyncClient, "get", mock_get)
 
     from evidentia.core.exceptions import ToolExecutionError
+
     tool = CrossRefSearchTool()
     with pytest.raises(ToolExecutionError) as exc_info:
         await tool.execute({"query": "test"})
@@ -138,6 +143,7 @@ async def test_crossref_rate_limit_error(monkeypatch):
 @pytest.mark.asyncio
 async def test_crossref_server_error(monkeypatch):
     """Test 500 error propagation."""
+
     async def mock_get(self, url, **kwargs):
         resp = _make_response(500, {"error": "internal server error"})
         raise httpx.HTTPStatusError("500", request=resp.request, response=resp)
@@ -145,6 +151,7 @@ async def test_crossref_server_error(monkeypatch):
     monkeypatch.setattr(httpx.AsyncClient, "get", mock_get)
 
     from evidentia.core.exceptions import ToolExecutionError
+
     tool = CrossRefSearchTool()
     with pytest.raises(ToolExecutionError) as exc_info:
         await tool.execute({"query": "test"})
@@ -155,12 +162,14 @@ async def test_crossref_server_error(monkeypatch):
 @pytest.mark.asyncio
 async def test_crossref_network_error(monkeypatch):
     """Test network error propagation."""
+
     async def mock_get(self, url, **kwargs):
         raise httpx.ConnectError("Connection refused")
 
     monkeypatch.setattr(httpx.AsyncClient, "get", mock_get)
 
     from evidentia.core.exceptions import ToolExecutionError
+
     tool = CrossRefSearchTool()
     with pytest.raises(ToolExecutionError) as exc_info:
         await tool.execute({"query": "test"})

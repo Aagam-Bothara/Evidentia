@@ -4,13 +4,13 @@ import json
 
 import pytest
 
-from evidentia.agent.researcher import ResearchAgent, AgentResult
+from evidentia.agent.researcher import ResearchAgent
 from evidentia.core.llm import BaseLLM, LLMResponse
 from evidentia.core.models import RunStatus
 from evidentia.tools.base import BaseTool, ToolMetadata, ToolRegistry
 
-
 # ── Mock LLM ─────────────────────────────────────────────────────────
+
 
 class MockLLM(BaseLLM):
     """LLM that returns pre-scripted responses for testing."""
@@ -31,6 +31,7 @@ class MockLLM(BaseLLM):
 
 
 # ── Mock Tool ────────────────────────────────────────────────────────
+
 
 class MockSearchTool(BaseTool):
     """A fake search tool that returns canned results."""
@@ -59,36 +60,41 @@ class MockSearchTool(BaseTool):
 
 # ── Tests ────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_agent_calls_tool_then_answers():
     """Agent should: receive query -> call tool -> get results -> produce final answer."""
     mock_responses = [
         # Iteration 1: Agent decides to search
-        json.dumps({
-            "action": "tool_call",
-            "tool": "mock_search",
-            "input": {"query": "advances in AI"},
-        }),
+        json.dumps(
+            {
+                "action": "tool_call",
+                "tool": "mock_search",
+                "input": {"query": "advances in AI"},
+            }
+        ),
         # Iteration 2: Agent sees results, produces final answer
-        json.dumps({
-            "action": "final_answer",
-            "claims": [
-                {
-                    "statement": "Recent AI research has made significant advances.",
-                    "confidence": "high",
-                    "citations": [
-                        {
-                            "title": "Test Paper: Advances in AI",
-                            "authors": ["Alice Smith", "Bob Jones"],
-                            "url": "https://example.com/paper1",
-                        }
-                    ],
-                    "evidence": ["This paper explores recent advances in AI research."],
-                    "conflicting_evidence": [],
-                }
-            ],
-            "summary": "AI research has advanced significantly based on recent papers.",
-        }),
+        json.dumps(
+            {
+                "action": "final_answer",
+                "claims": [
+                    {
+                        "statement": "Recent AI research has made significant advances.",
+                        "confidence": "high",
+                        "citations": [
+                            {
+                                "title": "Test Paper: Advances in AI",
+                                "authors": ["Alice Smith", "Bob Jones"],
+                                "url": "https://example.com/paper1",
+                            }
+                        ],
+                        "evidence": ["This paper explores recent advances in AI research."],
+                        "conflicting_evidence": [],
+                    }
+                ],
+                "summary": "AI research has advanced significantly based on recent papers.",
+            }
+        ),
     ]
 
     llm = MockLLM(mock_responses)
@@ -112,26 +118,30 @@ async def test_agent_calls_tool_then_answers():
 async def test_agent_handles_multi_tool_call():
     """Agent should be able to call multiple tools at once."""
     mock_responses = [
-        json.dumps({
-            "action": "multi_tool_call",
-            "calls": [
-                {"tool": "mock_search", "input": {"query": "topic A"}},
-                {"tool": "mock_search", "input": {"query": "topic B"}},
-            ],
-        }),
-        json.dumps({
-            "action": "final_answer",
-            "claims": [
-                {
-                    "statement": "Both topics are well-researched.",
-                    "confidence": "medium",
-                    "citations": [],
-                    "evidence": [],
-                    "conflicting_evidence": [],
-                }
-            ],
-            "summary": "Covered both topics.",
-        }),
+        json.dumps(
+            {
+                "action": "multi_tool_call",
+                "calls": [
+                    {"tool": "mock_search", "input": {"query": "topic A"}},
+                    {"tool": "mock_search", "input": {"query": "topic B"}},
+                ],
+            }
+        ),
+        json.dumps(
+            {
+                "action": "final_answer",
+                "claims": [
+                    {
+                        "statement": "Both topics are well-researched.",
+                        "confidence": "medium",
+                        "citations": [],
+                        "evidence": [],
+                        "conflicting_evidence": [],
+                    }
+                ],
+                "summary": "Covered both topics.",
+            }
+        ),
     ]
 
     llm = MockLLM(mock_responses)
@@ -149,16 +159,20 @@ async def test_agent_handles_multi_tool_call():
 async def test_agent_handles_unknown_tool():
     """Agent should handle gracefully when it tries to call a non-existent tool."""
     mock_responses = [
-        json.dumps({
-            "action": "tool_call",
-            "tool": "nonexistent_tool",
-            "input": {"query": "test"},
-        }),
-        json.dumps({
-            "action": "final_answer",
-            "claims": [],
-            "summary": "Could not find the requested tool.",
-        }),
+        json.dumps(
+            {
+                "action": "tool_call",
+                "tool": "nonexistent_tool",
+                "input": {"query": "test"},
+            }
+        ),
+        json.dumps(
+            {
+                "action": "final_answer",
+                "claims": [],
+                "summary": "Could not find the requested tool.",
+            }
+        ),
     ]
 
     llm = MockLLM(mock_responses)
@@ -177,8 +191,7 @@ async def test_agent_respects_max_iterations():
     """Agent should stop after max_iterations even if LLM never gives final_answer."""
     # LLM keeps calling tools forever
     mock_responses = [
-        json.dumps({"action": "tool_call", "tool": "mock_search", "input": {"query": f"search {i}"}})
-        for i in range(20)
+        json.dumps({"action": "tool_call", "tool": "mock_search", "input": {"query": f"search {i}"}}) for i in range(20)
     ]
 
     llm = MockLLM(mock_responses)
@@ -198,24 +211,28 @@ async def test_agent_handles_plain_text_response():
     """Agent should nudge the LLM if it responds with plain text instead of JSON."""
     mock_responses = [
         "Let me think about this... I should search for papers on this topic.",  # plain text
-        json.dumps({
-            "action": "tool_call",
-            "tool": "mock_search",
-            "input": {"query": "test"},
-        }),
-        json.dumps({
-            "action": "final_answer",
-            "claims": [
-                {
-                    "statement": "Found relevant results.",
-                    "confidence": "medium",
-                    "citations": [],
-                    "evidence": [],
-                    "conflicting_evidence": [],
-                }
-            ],
-            "summary": "Done.",
-        }),
+        json.dumps(
+            {
+                "action": "tool_call",
+                "tool": "mock_search",
+                "input": {"query": "test"},
+            }
+        ),
+        json.dumps(
+            {
+                "action": "final_answer",
+                "claims": [
+                    {
+                        "statement": "Found relevant results.",
+                        "confidence": "medium",
+                        "citations": [],
+                        "evidence": [],
+                        "conflicting_evidence": [],
+                    }
+                ],
+                "summary": "Done.",
+            }
+        ),
     ]
 
     llm = MockLLM(mock_responses)
@@ -233,19 +250,21 @@ async def test_agent_handles_plain_text_response():
 async def test_agent_result_to_dict():
     """Agent result should serialize cleanly to JSON."""
     mock_responses = [
-        json.dumps({
-            "action": "final_answer",
-            "claims": [
-                {
-                    "statement": "Test claim.",
-                    "confidence": "high",
-                    "citations": [{"title": "Source", "authors": ["Author"], "url": "https://example.com"}],
-                    "evidence": ["evidence text"],
-                    "conflicting_evidence": [],
-                }
-            ],
-            "summary": "Test summary.",
-        }),
+        json.dumps(
+            {
+                "action": "final_answer",
+                "claims": [
+                    {
+                        "statement": "Test claim.",
+                        "confidence": "high",
+                        "citations": [{"title": "Source", "authors": ["Author"], "url": "https://example.com"}],
+                        "evidence": ["evidence text"],
+                        "conflicting_evidence": [],
+                    }
+                ],
+                "summary": "Test summary.",
+            }
+        ),
     ]
 
     llm = MockLLM(mock_responses)

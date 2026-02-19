@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Callable
+from collections.abc import Callable
 
 import structlog
 from starlette.middleware.base import BaseHTTPMiddleware

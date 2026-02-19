@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
+import bcrypt
 from fastapi import Depends, HTTPException, Request, WebSocket, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-import bcrypt
 from jose import JWTError, jwt
 
 from evidentia.core.config import get_settings
@@ -35,12 +35,12 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def create_access_token(user_id: str, email: str) -> str:
     settings = get_settings()
-    expires = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expiration_minutes)
+    expires = datetime.now(UTC) + timedelta(minutes=settings.jwt_expiration_minutes)
     payload: dict[str, Any] = {
         "sub": user_id,
         "email": email,
         "exp": expires,
-        "iat": datetime.now(timezone.utc),
+        "iat": datetime.now(UTC),
     }
     return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
@@ -163,6 +163,7 @@ async def get_ws_user(
         if db is not None:
             try:
                 from evidentia.db.repositories import UserRepository
+
                 repo = UserRepository(db)
                 user = await repo.get_by_id(uuid.UUID(user_id_str))
                 if user and user.is_active:

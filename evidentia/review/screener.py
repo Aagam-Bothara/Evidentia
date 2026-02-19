@@ -12,7 +12,6 @@ Features:
 from __future__ import annotations
 
 import asyncio
-import json
 from collections import Counter
 from typing import Any
 
@@ -100,9 +99,7 @@ class Screener:
 
         for batch_idx in range(0, len(papers), self.BATCH_SIZE):
             batch = papers[batch_idx : batch_idx + self.BATCH_SIZE]
-            decisions = await self._screen_one_batch(
-                batch, inclusion_criteria, exclusion_criteria
-            )
+            decisions = await self._screen_one_batch(batch, inclusion_criteria, exclusion_criteria)
 
             # Apply decisions to papers
             for decision in decisions:
@@ -112,9 +109,7 @@ class Screener:
                     # Low confidence → force uncertain
                     if decision.confidence < 0.7 and decision.decision != "uncertain":
                         paper.screening_decision = "uncertain"
-                        paper.exclusion_reason = (
-                            f"Low confidence ({decision.confidence:.2f}): {decision.reason}"
-                        )
+                        paper.exclusion_reason = f"Low confidence ({decision.confidence:.2f}): {decision.reason}"
                     else:
                         paper.screening_decision = decision.decision
                         paper.exclusion_reason = decision.reason if decision.decision == "exclude" else None
@@ -163,7 +158,9 @@ class Screener:
             for batch_idx in range(0, len(papers), self.BATCH_SIZE):
                 batch = papers[batch_idx : batch_idx + self.BATCH_SIZE]
                 decisions = await self._screen_one_batch(
-                    batch, inclusion_criteria, exclusion_criteria,
+                    batch,
+                    inclusion_criteria,
+                    exclusion_criteria,
                     temperature=temperatures[pass_idx],
                 )
                 # Adjust paper indices to global
@@ -212,14 +209,10 @@ class Screener:
             # Apply decision
             if agreement < 0.5 or best_confidence < 0.7:
                 paper.screening_decision = "uncertain"
-                paper.exclusion_reason = (
-                    f"Low agreement ({agreement:.0%}): votes={votes}"
-                )
+                paper.exclusion_reason = f"Low agreement ({agreement:.0%}): votes={votes}"
             else:
                 paper.screening_decision = majority_decision
-                paper.exclusion_reason = (
-                    best_decision.reason if majority_decision == "exclude" else None
-                )
+                paper.exclusion_reason = best_decision.reason if majority_decision == "exclude" else None
 
             paper.screening_confidence = best_confidence
             paper.screening_agreement = round(agreement, 3)
@@ -266,9 +259,7 @@ class Screener:
                 for i in range(len(papers))
             ]
 
-    def _parse_decisions(
-        self, data: dict[str, Any], expected_count: int
-    ) -> list[ScreeningDecision]:
+    def _parse_decisions(self, data: dict[str, Any], expected_count: int) -> list[ScreeningDecision]:
         """Parse and validate LLM JSON output."""
         decisions: list[ScreeningDecision] = []
         raw_decisions = data.get("decisions", [])
@@ -291,9 +282,7 @@ class Screener:
             confidence = max(0.0, min(1.0, float(confidence)))
 
             # Parse criteria evaluations
-            criteria_evals = self._parse_criteria_evaluations(
-                raw.get("criteria_evaluations", [])
-            )
+            criteria_evals = self._parse_criteria_evaluations(raw.get("criteria_evaluations", []))
 
             # Parse evidence spans
             evidence_spans = raw.get("evidence_spans", [])
@@ -348,13 +337,15 @@ class Screener:
             if met is not None and not isinstance(met, bool):
                 met = None  # Invalid → uncertain
 
-            evaluations.append(CriterionEvaluation(
-                criterion=str(criterion),
-                criterion_type=raw.get("criterion_type", "inclusion"),
-                met=met,
-                rationale=str(raw.get("rationale", "")),
-                evidence_span=str(raw.get("evidence_span", "")),
-            ))
+            evaluations.append(
+                CriterionEvaluation(
+                    criterion=str(criterion),
+                    criterion_type=raw.get("criterion_type", "inclusion"),
+                    met=met,
+                    rationale=str(raw.get("rationale", "")),
+                    evidence_span=str(raw.get("evidence_span", "")),
+                )
+            )
 
         return evaluations
 

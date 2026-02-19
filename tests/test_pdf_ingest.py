@@ -3,8 +3,7 @@
 import pytest
 
 from evidentia.schemas.tool_io import PDFChunk, PDFIngestInput, PDFIngestOutput
-from evidentia.tools.pdf_ingest import PDFIngestTool, DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP
-
+from evidentia.tools.pdf_ingest import DEFAULT_CHUNK_OVERLAP, PDFIngestTool
 
 # ── Schema tests ────────────────────────────────────────────────────
 

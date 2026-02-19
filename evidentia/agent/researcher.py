@@ -15,23 +15,23 @@ This implements a ReAct-style (Reason + Act) agent loop.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
-from evidentia.core.exceptions import BudgetExhaustedError, EvidentiaCoreError
-from evidentia.core.llm import BaseLLM, LLMResponse
+from evidentia.core.exceptions import BudgetExhaustedError
+from evidentia.core.llm import BaseLLM
 from evidentia.core.logging import get_logger
 from evidentia.core.models import (
+    Citation,
     Claim,
     ClaimConfidence,
-    Citation,
     EvidenceSpan,
     Run,
     RunStatus,
     StepResult,
     StepStatus,
 )
-from evidentia.tools.base import BaseTool, ToolRegistry
+from evidentia.tools.base import ToolRegistry
 
 logger = get_logger(__name__)
 
@@ -143,19 +143,21 @@ class ResearchAgent:
             if action is None:
                 # LLM gave a plain text response — treat as reasoning, ask it to act
                 messages.append({"role": "assistant", "content": response.content})
-                messages.append({
-                    "role": "user",
-                    "content": (
-                        "Please use a tool to gather evidence, or if you have enough evidence, "
-                        "produce your final_answer in the required JSON format."
-                    ),
-                })
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "Please use a tool to gather evidence, or if you have enough evidence, "
+                            "produce your final_answer in the required JSON format."
+                        ),
+                    }
+                )
                 continue
 
             # ── Final answer ─────────────────────────────────────────
             if action["action"] == "final_answer":
                 run.status = RunStatus.COMPLETED
-                run.completed_at = datetime.now(timezone.utc)
+                run.completed_at = datetime.now(UTC)
                 claims = self._parse_claims(action)
                 run.claims = claims
 
@@ -189,10 +191,12 @@ class ResearchAgent:
                 total_tool_calls += 1
 
                 messages.append({"role": "assistant", "content": response.content})
-                messages.append({
-                    "role": "user",
-                    "content": f"Tool `{tool_name}` returned:\n```json\n{result_text}\n```",
-                })
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": f"Tool `{tool_name}` returned:\n```json\n{result_text}\n```",
+                    }
+                )
                 trace.append(TraceEntry(role="tool", tool=tool_name, content=result_text))
 
             # ── Multiple tool calls ──────────────────────────────────
@@ -213,14 +217,16 @@ class ResearchAgent:
 
                 combined_results = "\n\n".join(results_text_parts)
                 messages.append({"role": "assistant", "content": response.content})
-                messages.append({
-                    "role": "user",
-                    "content": f"Tool results:\n\n{combined_results}",
-                })
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": f"Tool results:\n\n{combined_results}",
+                    }
+                )
 
         # Exhausted iterations
         run.status = RunStatus.FAILED
-        run.completed_at = datetime.now(timezone.utc)
+        run.completed_at = datetime.now(UTC)
         logger.warning("agent_max_iterations", run_id=run.id)
 
         return AgentResult(
@@ -247,7 +253,7 @@ class ResearchAgent:
             )
             return step, json.dumps({"error": error_msg})
 
-        started = datetime.now(timezone.utc)
+        started = datetime.now(UTC)
         try:
             logger.info("tool_executing", tool=tool_name, input_keys=list(tool_input.keys()))
             output = await tool.execute_with_timeout(tool_input)
@@ -257,7 +263,7 @@ class ResearchAgent:
                 status=StepStatus.SUCCESS,
                 output=output,
                 started_at=started,
-                completed_at=datetime.now(timezone.utc),
+                completed_at=datetime.now(UTC),
             )
             # Truncate large outputs for the LLM context
             result_text = json.dumps(output, indent=2, default=str)
@@ -273,7 +279,7 @@ class ResearchAgent:
                 status=StepStatus.FAILED,
                 error=str(exc),
                 started_at=started,
-                completed_at=datetime.now(timezone.utc),
+                completed_at=datetime.now(UTC),
             )
             return step, json.dumps({"error": str(exc)})
 
@@ -310,7 +316,7 @@ class ResearchAgent:
                 depth -= 1
                 if depth == 0:
                     try:
-                        parsed = json.loads(text[brace_start:i + 1])
+                        parsed = json.loads(text[brace_start : i + 1])
                         if isinstance(parsed, dict) and "action" in parsed:
                             return parsed
                     except json.JSONDecodeError:
@@ -334,15 +340,9 @@ class ResearchAgent:
                 for c in raw.get("citations", [])
             ]
 
-            evidence_spans = [
-                EvidenceSpan(source_id="", text=e)
-                for e in raw.get("evidence", [])
-            ]
+            evidence_spans = [EvidenceSpan(source_id="", text=e) for e in raw.get("evidence", [])]
 
-            conflicting = [
-                EvidenceSpan(source_id="", text=e)
-                for e in raw.get("conflicting_evidence", [])
-            ]
+            conflicting = [EvidenceSpan(source_id="", text=e) for e in raw.get("conflicting_evidence", [])]
 
             confidence_map = {
                 "high": ClaimConfidence.HIGH,
@@ -351,13 +351,15 @@ class ResearchAgent:
                 "conflicting": ClaimConfidence.CONFLICTING,
             }
 
-            claims.append(Claim(
-                statement=raw.get("statement", ""),
-                confidence=confidence_map.get(raw.get("confidence", "medium"), ClaimConfidence.MEDIUM),
-                citations=citations,
-                evidence_spans=evidence_spans,
-                conflicting_evidence=conflicting,
-            ))
+            claims.append(
+                Claim(
+                    statement=raw.get("statement", ""),
+                    confidence=confidence_map.get(raw.get("confidence", "medium"), ClaimConfidence.MEDIUM),
+                    citations=citations,
+                    evidence_spans=evidence_spans,
+                    conflicting_evidence=conflicting,
+                )
+            )
 
         return claims
 
@@ -377,7 +379,7 @@ class TraceEntry:
         self.role = role
         self.content = content
         self.tool = tool
-        self.timestamp = datetime.now(timezone.utc)
+        self.timestamp = datetime.now(UTC)
 
     def to_dict(self) -> dict[str, Any]:
         return {

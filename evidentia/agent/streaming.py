@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
-from typing import Any, AsyncGenerator
+from collections.abc import AsyncGenerator
+from datetime import UTC, datetime
+from typing import Any
 
-from evidentia.core.llm import BaseLLM, LLMResponse
+from evidentia.core.llm import BaseLLM
 from evidentia.core.logging import get_logger
-from evidentia.core.models import RunStatus, StepStatus
-from evidentia.agent.researcher import ResearchAgent, AgentResult
+from evidentia.core.models import RunStatus
 from evidentia.tools.base import ToolRegistry
 
 logger = get_logger(__name__)
@@ -21,14 +21,17 @@ class StreamEvent:
     def __init__(self, event_type: str, data: dict[str, Any]) -> None:
         self.type = event_type
         self.data = data
-        self.timestamp = datetime.now(timezone.utc).isoformat()
+        self.timestamp = datetime.now(UTC).isoformat()
 
     def to_json(self) -> str:
-        return json.dumps({
-            "type": self.type,
-            "data": self.data,
-            "timestamp": self.timestamp,
-        }, default=str)
+        return json.dumps(
+            {
+                "type": self.type,
+                "data": self.data,
+                "timestamp": self.timestamp,
+            },
+            default=str,
+        )
 
 
 class StreamingAgent:
@@ -48,15 +51,18 @@ class StreamingAgent:
 
     async def stream(self, query: str) -> AsyncGenerator[StreamEvent, None]:
         """Execute the agent loop, yielding events as they happen."""
-        from evidentia.core.models import Run
         from evidentia.agent.researcher import AGENT_SYSTEM_PROMPT
+        from evidentia.core.models import Run
 
         run = Run(query=query, status=RunStatus.EXECUTING)
 
-        yield StreamEvent("run_started", {
-            "run_id": run.id,
-            "query": query,
-        })
+        yield StreamEvent(
+            "run_started",
+            {
+                "run_id": run.id,
+                "query": query,
+            },
+        )
 
         # Build system prompt
         tool_descriptions = self._format_tool_descriptions()
@@ -70,18 +76,24 @@ class StreamingAgent:
         total_tool_calls = 0
 
         for iteration in range(self._max_iterations):
-            yield StreamEvent("thinking", {
-                "iteration": iteration + 1,
-                "message": f"Reasoning (iteration {iteration + 1})...",
-            })
+            yield StreamEvent(
+                "thinking",
+                {
+                    "iteration": iteration + 1,
+                    "message": f"Reasoning (iteration {iteration + 1})...",
+                },
+            )
 
             # Ask LLM
             response = await self._llm.chat(messages, temperature=0.0)
 
-            yield StreamEvent("agent_response", {
-                "iteration": iteration + 1,
-                "content": response.content[:500],
-            })
+            yield StreamEvent(
+                "agent_response",
+                {
+                    "iteration": iteration + 1,
+                    "content": response.content[:500],
+                },
+            )
 
             # Parse action
             action = self._parse_action(response.content)
@@ -89,10 +101,15 @@ class StreamingAgent:
             if action is None:
                 # Plain text — nudge the LLM
                 messages.append({"role": "assistant", "content": response.content})
-                messages.append({
-                    "role": "user",
-                    "content": "Please use a tool to gather evidence, or produce your final_answer in the required JSON format.",
-                })
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "Please use a tool to gather evidence, or produce "
+                            "your final_answer in the required JSON format."
+                        ),
+                    }
+                )
                 continue
 
             # Final answer
@@ -101,21 +118,26 @@ class StreamingAgent:
 
                 claims_data = []
                 for raw in action.get("claims", []):
-                    claims_data.append({
-                        "statement": raw.get("statement", ""),
-                        "confidence": raw.get("confidence", "medium"),
-                        "citations": raw.get("citations", []),
-                        "evidence": raw.get("evidence", []),
-                        "conflicting_evidence": raw.get("conflicting_evidence", []),
-                    })
+                    claims_data.append(
+                        {
+                            "statement": raw.get("statement", ""),
+                            "confidence": raw.get("confidence", "medium"),
+                            "citations": raw.get("citations", []),
+                            "evidence": raw.get("evidence", []),
+                            "conflicting_evidence": raw.get("conflicting_evidence", []),
+                        }
+                    )
 
-                yield StreamEvent("completed", {
-                    "run_id": run.id,
-                    "summary": action.get("summary", ""),
-                    "claims": claims_data,
-                    "total_tool_calls": total_tool_calls,
-                    "total_iterations": iteration + 1,
-                })
+                yield StreamEvent(
+                    "completed",
+                    {
+                        "run_id": run.id,
+                        "summary": action.get("summary", ""),
+                        "claims": claims_data,
+                        "total_tool_calls": total_tool_calls,
+                        "total_iterations": iteration + 1,
+                    },
+                )
                 return
 
             # Tool calls
@@ -134,10 +156,13 @@ class StreamingAgent:
                 tool_name = call["tool"]
                 tool_input = call.get("input", {})
 
-                yield StreamEvent("tool_calling", {
-                    "tool": tool_name,
-                    "input": tool_input,
-                })
+                yield StreamEvent(
+                    "tool_calling",
+                    {
+                        "tool": tool_name,
+                        "input": tool_input,
+                    },
+                )
 
                 tool = self._tools.get(tool_name)
                 if tool is None:
@@ -156,11 +181,14 @@ class StreamingAgent:
 
                     # Summarize for UI
                     summary = self._summarize_tool_output(tool_name, output)
-                    yield StreamEvent("tool_result", {
-                        "tool": tool_name,
-                        "summary": summary,
-                        "result_count": self._count_results(output),
-                    })
+                    yield StreamEvent(
+                        "tool_result",
+                        {
+                            "tool": tool_name,
+                            "summary": summary,
+                            "result_count": self._count_results(output),
+                        },
+                    )
                     results_parts.append(f"**{tool_name}**:\n```json\n{result_text}\n```")
 
                 except Exception as exc:
@@ -173,11 +201,14 @@ class StreamingAgent:
             messages.append({"role": "user", "content": f"Tool results:\n\n{combined}"})
 
         # Max iterations reached
-        yield StreamEvent("failed", {
-            "run_id": run.id,
-            "reason": "Maximum iterations reached without final answer.",
-            "total_tool_calls": total_tool_calls,
-        })
+        yield StreamEvent(
+            "failed",
+            {
+                "run_id": run.id,
+                "reason": "Maximum iterations reached without final answer.",
+                "total_tool_calls": total_tool_calls,
+            },
+        )
 
     def _parse_action(self, content: str) -> dict[str, Any] | None:
         """Extract JSON action from LLM response."""
@@ -204,7 +235,7 @@ class StreamingAgent:
                 depth -= 1
                 if depth == 0:
                     try:
-                        parsed = json.loads(text[brace_start:i + 1])
+                        parsed = json.loads(text[brace_start : i + 1])
                         if isinstance(parsed, dict) and "action" in parsed:
                             return parsed
                     except json.JSONDecodeError:

@@ -59,14 +59,14 @@ async def upload_pdf(
 
         tool = PDFIngestTool()
         result = await tool.execute({"file_path": str(tmp_path)})
-    except ImportError:
+    except ImportError as exc:
         raise HTTPException(
             status_code=501,
             detail="PDF ingestion requires pymupdf. Install with: pip install pymupdf",
-        )
+        ) from exc
     except Exception as exc:
         logger.error("pdf_upload_failed", error=str(exc))
-        raise HTTPException(status_code=500, detail=f"PDF processing failed: {exc}")
+        raise HTTPException(status_code=500, detail=f"PDF processing failed: {exc}") from exc
 
     chunks = result.get("chunks", [])
     metadata = result.get("metadata", {})

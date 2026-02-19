@@ -65,6 +65,7 @@ def _make_response(status_code: int, data: dict, headers: dict | None = None) ->
 @pytest.mark.asyncio
 async def test_openalex_search_success(monkeypatch):
     """Test successful OpenAlex search with abstract reconstruction."""
+
     async def mock_get(self, url, **kwargs):
         return _make_response(200, OPENALEX_RESPONSE)
 
@@ -92,6 +93,7 @@ async def test_openalex_search_success(monkeypatch):
 @pytest.mark.asyncio
 async def test_openalex_null_abstract(monkeypatch):
     """Test that null abstract_inverted_index returns None."""
+
     async def mock_get(self, url, **kwargs):
         return _make_response(200, OPENALEX_RESPONSE)
 
@@ -139,6 +141,7 @@ async def test_openalex_open_access_filter(monkeypatch):
 @pytest.mark.asyncio
 async def test_openalex_empty_results(monkeypatch):
     """Test empty search results."""
+
     async def mock_get(self, url, **kwargs):
         return _make_response(200, {"meta": {"count": 0}, "results": []})
 
@@ -152,6 +155,7 @@ async def test_openalex_empty_results(monkeypatch):
 @pytest.mark.asyncio
 async def test_openalex_rate_limit_error(monkeypatch):
     """Test 429 error propagation."""
+
     async def mock_get(self, url, **kwargs):
         resp = _make_response(429, {"error": "rate limited"}, headers={"Retry-After": "10"})
         raise httpx.HTTPStatusError("429", request=resp.request, response=resp)
@@ -159,6 +163,7 @@ async def test_openalex_rate_limit_error(monkeypatch):
     monkeypatch.setattr(httpx.AsyncClient, "get", mock_get)
 
     from evidentia.core.exceptions import ToolExecutionError
+
     tool = OpenAlexTool()
     with pytest.raises(ToolExecutionError) as exc_info:
         await tool.execute({"query": "test"})

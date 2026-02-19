@@ -62,10 +62,7 @@ class CrossRefSearchTool(BaseTool):
         works = []
         for item in data.get("message", {}).get("items", []):
             # Authors
-            authors = [
-                f"{a.get('given', '')} {a.get('family', '')}".strip()
-                for a in item.get("author", [])
-            ]
+            authors = [f"{a.get('given', '')} {a.get('family', '')}".strip() for a in item.get("author", [])]
 
             # Publication date
             date_parts = item.get("published-print", item.get("published-online", {}))
@@ -86,15 +83,17 @@ class CrossRefSearchTool(BaseTool):
                 title = title_list[0]
 
             doi = item.get("DOI", "")
-            works.append(CrossRefWork(
-                doi=doi,
-                title=title,
-                authors=authors,
-                journal=journal,
-                published_date=date_str,
-                citation_count=item.get("is-referenced-by-count"),
-                url=item.get("URL", f"https://doi.org/{doi}" if doi else ""),
-            ))
+            works.append(
+                CrossRefWork(
+                    doi=doi,
+                    title=title,
+                    authors=authors,
+                    journal=journal,
+                    published_date=date_str,
+                    citation_count=item.get("is-referenced-by-count"),
+                    url=item.get("URL", f"https://doi.org/{doi}" if doi else ""),
+                )
+            )
 
         output = CrossRefSearchOutput(data=works)
         return output.model_dump()

@@ -1,6 +1,6 @@
 """Tests for the validation layer."""
 
-from evidentia.core.models import Claim, ClaimConfidence, Citation, EvidenceSpan
+from evidentia.core.models import Citation, Claim, EvidenceSpan
 from evidentia.validator.citation_validator import CitationValidator
 
 

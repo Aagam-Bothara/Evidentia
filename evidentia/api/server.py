@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import json
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,9 +22,20 @@ from evidentia.api.middleware import (
     RequestIdMiddleware,
     SecurityHeadersMiddleware,
 )
-from evidentia.api.routes import annotations, auth, export, health, projects, query, reviews, teams, tools, upload
+from evidentia.api.routes import (
+    annotations,
+    auth,
+    export,
+    health,
+    projects,
+    query,
+    reviews,
+    teams,
+    tools,
+    upload,
+)
 from evidentia.core.config import get_settings
-from evidentia.core.logging import setup_logging, get_logger
+from evidentia.core.logging import get_logger, setup_logging
 
 logger = get_logger(__name__)
 
@@ -47,6 +58,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Initialize DB (graceful — don't crash if DB is unavailable)
     try:
         from evidentia.db.engine import init_db
+
         await init_db()
         logger.info("database_ready")
     except Exception as exc:
@@ -55,6 +67,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Initialize Redis (graceful)
     try:
         from evidentia.cache import get_redis
+
         await get_redis()
     except Exception as exc:
         logger.warning("redis_unavailable", error=str(exc))
@@ -66,12 +79,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # ── Shutdown ────────────────────────────────────────────────
     try:
         from evidentia.db.engine import close_db
+
         await close_db()
     except Exception:
         pass
 
     try:
         from evidentia.cache import close_redis
+
         await close_redis()
     except Exception:
         pass
@@ -139,6 +154,7 @@ app.include_router(reviews.router, prefix="/api/v1", tags=["reviews"])
 
 # ── Web UI ──────────────────────────────────────────────────────────
 
+
 @app.get("/")
 async def serve_ui():
     """Serve the Evidentia web UI."""
@@ -146,6 +162,7 @@ async def serve_ui():
 
 
 # ── WebSocket for streaming agent ───────────────────────────────────
+
 
 @app.websocket("/ws/query")
 async def websocket_query(ws: WebSocket):
@@ -160,27 +177,37 @@ async def websocket_query(ws: WebSocket):
     user_id = None
     try:
         from evidentia.db.engine import _get_session_factory
+
         factory = _get_session_factory()
         async with factory() as db:
             from evidentia.api.auth import get_ws_user
+
             ws_user = await get_ws_user(ws, db)
             if ws_user:
                 user_id = ws_user.user_id
 
         if user_id is None and settings.is_production:
-            await ws.send_text(json.dumps({
-                "type": "error",
-                "data": {"message": "Authentication required. Connect with ?token=JWT"},
-            }))
+            await ws.send_text(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "data": {"message": "Authentication required. Connect with ?token=JWT"},
+                    }
+                )
+            )
             await ws.close()
             return
     except Exception:
         # DB unavailable — allow in dev mode
         if settings.is_production:
-            await ws.send_text(json.dumps({
-                "type": "error",
-                "data": {"message": "Authentication service unavailable"},
-            }))
+            await ws.send_text(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "data": {"message": "Authentication service unavailable"},
+                    }
+                )
+            )
             await ws.close()
             return
 
@@ -192,22 +219,35 @@ async def websocket_query(ws: WebSocket):
         project_id = data.get("project_id")
 
         if not user_query:
-            await ws.send_text(json.dumps({
-                "type": "error",
-                "data": {"message": "Empty query"},
-            }))
+            await ws.send_text(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "data": {"message": "Empty query"},
+                    }
+                )
+            )
             await ws.close()
             return
 
         # Build the real agent (system-driven, not a wrapper)
         try:
             from evidentia.agent.factory import build_agent
+
             agent = build_agent()
         except Exception as exc:
-            await ws.send_text(json.dumps({
-                "type": "error",
-                "data": {"message": f"Failed to initialize agent: {str(exc)}. Set OPENAI_API_KEY or ANTHROPIC_API_KEY."},
-            }))
+            await ws.send_text(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "data": {
+                            "message": (
+                                f"Failed to initialize agent: {str(exc)}. Set OPENAI_API_KEY or ANTHROPIC_API_KEY."
+                            ),
+                        },
+                    }
+                )
+            )
             await ws.close()
             return
 
@@ -222,11 +262,14 @@ async def websocket_query(ws: WebSocket):
         if user_id and agent_output:
             try:
                 from evidentia.db.engine import _get_session_factory
+
                 factory = _get_session_factory()
                 async with factory() as db:
                     from evidentia.db.repositories import RunRepository
+
                     repo = RunRepository(db)
                     import uuid as _uuid
+
                     _proj_id = None
                     if project_id:
                         try:
@@ -256,10 +299,14 @@ async def websocket_query(ws: WebSocket):
     except Exception as exc:
         logger.error("websocket_error", error=str(exc))
         try:
-            await ws.send_text(json.dumps({
-                "type": "error",
-                "data": {"message": str(exc) if not settings.is_production else "Internal error"},
-            }))
+            await ws.send_text(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "data": {"message": str(exc) if not settings.is_production else "Internal error"},
+                    }
+                )
+            )
         except Exception:
             pass
     finally:
@@ -270,6 +317,7 @@ async def websocket_query(ws: WebSocket):
 
 
 # ── WebSocket for streaming systematic reviews ───────────────────
+
 
 @app.websocket("/ws/review")
 async def websocket_review(ws: WebSocket):
@@ -283,26 +331,36 @@ async def websocket_review(ws: WebSocket):
     user_id = None
     try:
         from evidentia.db.engine import _get_session_factory
+
         factory = _get_session_factory()
         async with factory() as db:
             from evidentia.api.auth import get_ws_user
+
             ws_user = await get_ws_user(ws, db)
             if ws_user:
                 user_id = ws_user.user_id
 
         if user_id is None and settings.is_production:
-            await ws.send_text(json.dumps({
-                "type": "error",
-                "data": {"message": "Authentication required"},
-            }))
+            await ws.send_text(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "data": {"message": "Authentication required"},
+                    }
+                )
+            )
             await ws.close()
             return
     except Exception:
         if settings.is_production:
-            await ws.send_text(json.dumps({
-                "type": "error",
-                "data": {"message": "Authentication service unavailable"},
-            }))
+            await ws.send_text(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "data": {"message": "Authentication service unavailable"},
+                    }
+                )
+            )
             await ws.close()
             return
 
@@ -313,15 +371,20 @@ async def websocket_review(ws: WebSocket):
 
         research_question = data.get("research_question", "")
         if not research_question:
-            await ws.send_text(json.dumps({
-                "type": "error",
-                "data": {"message": "research_question is required"},
-            }))
+            await ws.send_text(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "data": {"message": "research_question is required"},
+                    }
+                )
+            )
             await ws.close()
             return
 
         # Build review config
         from evidentia.review.models import ReviewConfig, ReviewMode
+
         mode_str = data.get("mode", "rigorous")
         try:
             review_mode = ReviewMode(mode_str)
@@ -339,12 +402,17 @@ async def websocket_review(ws: WebSocket):
         # Build the review engine
         try:
             from evidentia.agent.factory import build_review_engine
+
             engine = build_review_engine()
         except Exception as exc:
-            await ws.send_text(json.dumps({
-                "type": "error",
-                "data": {"message": f"Failed to initialize review engine: {exc}"},
-            }))
+            await ws.send_text(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "data": {"message": f"Failed to initialize review engine: {exc}"},
+                    }
+                )
+            )
             await ws.close()
             return
 
@@ -359,11 +427,13 @@ async def websocket_review(ws: WebSocket):
         if user_id and review_data:
             try:
                 from evidentia.db.engine import _get_session_factory
+
                 factory = _get_session_factory()
                 async with factory() as db:
+                    import uuid as _uuid
+
                     from evidentia.db.review_repository import ReviewRepository
                     from evidentia.review.models import PaperRecord, PRISMAFlowData
-                    import uuid as _uuid
 
                     repo = ReviewRepository(db)
                     proj_id = None
@@ -407,10 +477,14 @@ async def websocket_review(ws: WebSocket):
     except Exception as exc:
         logger.error("review_ws_error", error=str(exc))
         try:
-            await ws.send_text(json.dumps({
-                "type": "error",
-                "data": {"message": str(exc) if not settings.is_production else "Internal error"},
-            }))
+            await ws.send_text(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "data": {"message": str(exc) if not settings.is_production else "Internal error"},
+                    }
+                )
+            )
         except Exception:
             pass
     finally:

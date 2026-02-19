@@ -6,7 +6,7 @@ from typing import Any
 
 from evidentia.core.exceptions import PlanningError
 from evidentia.core.logging import get_logger
-from evidentia.core.models import ExecutionPlan, PlanStep
+from evidentia.core.models import ExecutionPlan
 from evidentia.schemas.api import QueryRequest
 
 logger = get_logger(__name__)
@@ -71,9 +71,7 @@ class Planner:
         if not plan.steps:
             raise PlanningError("Plan has zero steps")
         if len(plan.steps) > request.max_steps:
-            raise PlanningError(
-                f"Plan has {len(plan.steps)} steps, exceeding max of {request.max_steps}"
-            )
+            raise PlanningError(f"Plan has {len(plan.steps)} steps, exceeding max of {request.max_steps}")
         step_ids = {s.id for s in plan.steps}
         for step in plan.steps:
             if step.tool_name not in self._available_tools:

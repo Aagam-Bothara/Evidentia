@@ -7,7 +7,7 @@ Before decomposition, checks for related past research to inject context.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from evidentia.core.logging import get_logger
@@ -48,12 +48,14 @@ class ResearchMemoryService:
             logger.warning("memory_db_record_failed", error=str(exc))
 
         # Fallback to in-memory
-        _memory_store.append({
-            "user_id": str(user_id),
-            "topic_summary": query,
-            "source_ids": source_ids,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        })
+        _memory_store.append(
+            {
+                "user_id": str(user_id),
+                "topic_summary": query,
+                "source_ids": source_ids,
+                "created_at": datetime.now(UTC).isoformat(),
+            }
+        )
 
     async def find_related(
         self,

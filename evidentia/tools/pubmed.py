@@ -33,7 +33,7 @@ class PubMedTool(BaseTool):
     async def execute(self, input_data: dict[str, Any]) -> dict[str, Any]:
         params = PubMedSearchInput.model_validate(input_data)
 
-        headers: dict[str, str] = {}
+        _headers: dict[str, str] = {}
         search_params: dict[str, Any] = {
             "db": "pubmed",
             "term": params.query,
@@ -177,14 +177,16 @@ class PubMedTool(BaseTool):
                     doi = eid.text
                     break
 
-            articles.append(PubMedArticle(
-                pmid=pmid,
-                title=title or "",
-                abstract=abstract,
-                authors=authors,
-                published_date=date_str,
-                doi=doi,
-                url=f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
-            ))
+            articles.append(
+                PubMedArticle(
+                    pmid=pmid,
+                    title=title or "",
+                    abstract=abstract,
+                    authors=authors,
+                    published_date=date_str,
+                    doi=doi,
+                    url=f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
+                )
+            )
 
         return articles

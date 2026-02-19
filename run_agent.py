@@ -115,6 +115,7 @@ async def main(query: str) -> None:
 
     # Export full result as JSON
     import uuid
+
     run_id = uuid.uuid4().hex[:8]
     with open(f"run_{run_id}.json", "w") as f:
         json.dump(result.to_dict(), f, indent=2, default=str)
@@ -123,7 +124,7 @@ async def main(query: str) -> None:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        console.print("[yellow]Usage: python run_agent.py \"<your research query>\"[/yellow]")
+        console.print('[yellow]Usage: python run_agent.py "<your research query>"[/yellow]')
         console.print("\nExamples:")
         console.print('  python run_agent.py "What are the latest advances in protein folding?"')
         console.print('  python run_agent.py "Compare BERT and GPT architectures"')

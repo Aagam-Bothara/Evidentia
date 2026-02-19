@@ -1,6 +1,5 @@
 """Tests for the systematic review REST API endpoints."""
 
-import json
 import uuid
 
 import pytest
@@ -8,7 +7,6 @@ from fastapi.testclient import TestClient
 
 from evidentia.api.auth import AuthenticatedUser, require_auth
 from evidentia.api.server import app
-
 
 # ── Auth override ────────────────────────────────────────────────────
 
@@ -52,19 +50,25 @@ def test_create_review(client):
 
 def test_create_review_missing_question(client):
     """Should reject reviews with a missing research question."""
-    resp = client.post("/api/v1/reviews", json={
-        "research_question": "",
-        "inclusion_criteria": ["Some criteria"],
-    })
+    resp = client.post(
+        "/api/v1/reviews",
+        json={
+            "research_question": "",
+            "inclusion_criteria": ["Some criteria"],
+        },
+    )
     assert resp.status_code == 422  # Validation error
 
 
 def test_create_review_missing_criteria(client):
     """Should reject reviews with empty inclusion criteria."""
-    resp = client.post("/api/v1/reviews", json={
-        "research_question": "A valid research question for testing purposes here",
-        "inclusion_criteria": [],
-    })
+    resp = client.post(
+        "/api/v1/reviews",
+        json={
+            "research_question": "A valid research question for testing purposes here",
+            "inclusion_criteria": [],
+        },
+    )
     assert resp.status_code == 422
 
 
@@ -75,9 +79,10 @@ def test_list_reviews(client):
     """GET /api/v1/reviews should return list of reviews."""
     # Create two reviews
     client.post("/api/v1/reviews", json=_create_payload())
-    client.post("/api/v1/reviews", json=_create_payload(
-        research_question="Second question about machine learning for drug discovery"
-    ))
+    client.post(
+        "/api/v1/reviews",
+        json=_create_payload(research_question="Second question about machine learning for drug discovery"),
+    )
 
     resp = client.get("/api/v1/reviews")
     assert resp.status_code == 200

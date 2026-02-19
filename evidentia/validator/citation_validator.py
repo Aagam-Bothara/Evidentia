@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from evidentia.core.exceptions import CitationValidationError
 from evidentia.core.logging import get_logger
 from evidentia.core.models import Claim
 
@@ -33,9 +32,7 @@ class CitationValidator:
             )
 
         if self._require_evidence_span and not claim.evidence_spans:
-            issues.append(
-                f"Claim '{claim.statement[:50]}...' has no evidence spans"
-            )
+            issues.append(f"Claim '{claim.statement[:50]}...' has no evidence spans")
 
         if claim.conflicting_evidence:
             issues.append(

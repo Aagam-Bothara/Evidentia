@@ -2,7 +2,6 @@
 
 import json
 from typing import Any
-from unittest.mock import AsyncMock
 
 import pytest
 
@@ -10,7 +9,6 @@ from evidentia.core.llm import BaseLLM, LLMResponse
 from evidentia.review.engine import SystematicReviewEngine
 from evidentia.review.models import ReviewConfig, ReviewEvent, ReviewMode
 from evidentia.tools.base import BaseTool, ToolMetadata, ToolRegistry
-
 
 # ── Mock LLM ─────────────────────────────────────────────────────────
 
@@ -27,6 +25,7 @@ class MockReviewLLM(BaseLLM):
         user_msg = messages[-1]["content"] if messages else ""
         # Count [N] patterns to determine paper count
         import re
+
         indices = re.findall(r"\[(\d+)\]", user_msg)
         count = len(indices) if indices else 1
 
@@ -347,18 +346,21 @@ def test_normalize_pubmed_results():
     registry = ToolRegistry()
     engine = SystematicReviewEngine(llm=llm, tool_registry=registry)
 
-    papers = engine._normalize_results("pubmed_search", {
-        "data": [
-            {
-                "title": "Test Paper",
-                "authors": ["Author A"],
-                "abstract": "An abstract",
-                "doi": "10.1234/test",
-                "pmid": "99999",
-                "published_date": "2024-01-01",
-            }
-        ]
-    })
+    papers = engine._normalize_results(
+        "pubmed_search",
+        {
+            "data": [
+                {
+                    "title": "Test Paper",
+                    "authors": ["Author A"],
+                    "abstract": "An abstract",
+                    "doi": "10.1234/test",
+                    "pmid": "99999",
+                    "published_date": "2024-01-01",
+                }
+            ]
+        },
+    )
     assert len(papers) == 1
     assert papers[0].title == "Test Paper"
     assert papers[0].source_database == "pubmed_search"
@@ -371,17 +373,20 @@ def test_normalize_openalex_results():
     registry = ToolRegistry()
     engine = SystematicReviewEngine(llm=llm, tool_registry=registry)
 
-    papers = engine._normalize_results("openalex_search", {
-        "data": [
-            {
-                "title": "OA Paper",
-                "authors": ["Author B"],
-                "work_id": "W123",
-                "cited_by_count": 50,
-                "published": "2023-06",
-            }
-        ]
-    })
+    papers = engine._normalize_results(
+        "openalex_search",
+        {
+            "data": [
+                {
+                    "title": "OA Paper",
+                    "authors": ["Author B"],
+                    "work_id": "W123",
+                    "cited_by_count": 50,
+                    "published": "2023-06",
+                }
+            ]
+        },
+    )
     assert len(papers) == 1
     assert papers[0].source_id == "W123"
     assert papers[0].citation_count == 50
@@ -394,12 +399,15 @@ def test_normalize_skips_empty_titles():
     registry = ToolRegistry()
     engine = SystematicReviewEngine(llm=llm, tool_registry=registry)
 
-    papers = engine._normalize_results("test", {
-        "data": [
-            {"title": "", "authors": []},
-            {"title": "Valid Paper", "authors": ["Author"]},
-        ]
-    })
+    papers = engine._normalize_results(
+        "test",
+        {
+            "data": [
+                {"title": "", "authors": []},
+                {"title": "Valid Paper", "authors": ["Author"]},
+            ]
+        },
+    )
     assert len(papers) == 1
     assert papers[0].title == "Valid Paper"
 

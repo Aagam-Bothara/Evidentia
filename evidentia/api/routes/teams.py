@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -78,18 +78,20 @@ async def create_team(
 
     # Fallback to in-memory
     team_id = uuid.uuid4().hex[:12]
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     _team_store[team_id] = {
         "id": team_id,
         "name": body.name,
         "created_by": str(user.user_id),
         "created_at": now,
     }
-    _team_members[team_id] = [{
-        "user_id": str(user.user_id),
-        "email": user.email,
-        "role": "admin",
-    }]
+    _team_members[team_id] = [
+        {
+            "user_id": str(user.user_id),
+            "email": user.email,
+            "role": "admin",
+        }
+    ]
 
     return TeamResponse(
         id=team_id,
@@ -133,12 +135,14 @@ async def list_teams(
         if any(m["user_id"] == str(user.user_id) for m in members):
             team = _team_store.get(team_id)
             if team:
-                user_teams.append(TeamResponse(
-                    id=team["id"],
-                    name=team["name"],
-                    member_count=len(members),
-                    created_at=team["created_at"],
-                ))
+                user_teams.append(
+                    TeamResponse(
+                        id=team["id"],
+                        name=team["name"],
+                        member_count=len(members),
+                        created_at=team["created_at"],
+                    )
+                )
     return TeamListResponse(teams=user_teams)
 
 
@@ -275,6 +279,7 @@ async def share_project(
 
     # Fallback: just store team_id on the project
     from evidentia.api.routes.projects import _project_store
+
     project = _project_store.get(project_id)
     if project is None or project["user_id"] != str(user.user_id):
         raise HTTPException(status_code=404, detail="Project not found")

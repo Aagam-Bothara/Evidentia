@@ -129,10 +129,7 @@ class OpenAILLM(BaseLLM):
 
         message = data["choices"][0]["message"]
         # If the model called tools, return the tool calls as JSON
-        if message.get("tool_calls"):
-            content = json.dumps(message["tool_calls"])
-        else:
-            content = message.get("content", "")
+        content = json.dumps(message["tool_calls"]) if message.get("tool_calls") else message.get("content", "")
 
         return LLMResponse(content=content, usage=data.get("usage", {}))
 
@@ -199,11 +196,13 @@ class AnthropicLLM(BaseLLM):
         anthropic_tools = []
         for tool in tools:
             func = tool.get("function", tool)
-            anthropic_tools.append({
-                "name": func["name"],
-                "description": func.get("description", ""),
-                "input_schema": func.get("parameters", {}),
-            })
+            anthropic_tools.append(
+                {
+                    "name": func["name"],
+                    "description": func.get("description", ""),
+                    "input_schema": func.get("parameters", {}),
+                }
+            )
 
         system = ""
         chat_messages = []

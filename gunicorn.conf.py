@@ -12,13 +12,13 @@ worker_class = "uvicorn.workers.UvicornWorker"
 worker_tmp_dir = "/dev/shm"
 
 # Timeouts
-timeout = 120           # Worker timeout for long-running agent queries
-graceful_timeout = 30   # Time to finish in-flight requests on shutdown
+timeout = 120  # Worker timeout for long-running agent queries
+graceful_timeout = 30  # Time to finish in-flight requests on shutdown
 keepalive = 5
 
 # Logging
-accesslog = "-"         # stdout
-errorlog = "-"          # stderr
+accesslog = "-"  # stdout
+errorlog = "-"  # stderr
 loglevel = os.getenv("EVIDENTIA_LOG_LEVEL", "info").lower()
 
 # Process naming

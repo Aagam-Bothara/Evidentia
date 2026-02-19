@@ -71,10 +71,19 @@ evidentia = "evidentia.cli.main:cli"
 
 [tool.ruff]
 target-version = "py311"
-line-length = 100
+line-length = 120
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
+ignore = [
+    "B008",    # function-call-in-default-argument — standard FastAPI Depends() pattern
+    "UP042",   # replace-str-enum — StrEnum requires Python 3.11+ and changes serialization
+    "SIM105",  # suppressible-exception — explicit try/except is often clearer
+]
+
+[tool.ruff.lint.per-file-ignores]
+"alembic/*" = ["E501"]  # migrations have long SQL lines
+"tests/*" = ["B017"]    # assert-raises-exception is fine in tests
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

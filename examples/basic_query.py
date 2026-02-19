@@ -9,11 +9,6 @@ This example demonstrates how to use the Evidentia SDK to:
 
 import asyncio
 
-from evidentia.core.config import get_settings
-from evidentia.core.models import Claim
-from evidentia.orchestrator.decision import DecisionEngine
-from evidentia.orchestrator.planner import Planner
-from evidentia.orchestrator.router import ToolRouter
 from evidentia.schemas.api import QueryRequest
 from evidentia.tools.arxiv import ArxivTool
 from evidentia.tools.base import ToolRegistry
@@ -29,7 +24,7 @@ async def main():
     print(f"Registered {len(registry.tool_names)} tools: {registry.tool_names}")
 
     # 2. Create a query
-    request = QueryRequest(
+    _request = QueryRequest(
         query="What are the latest advances in protein structure prediction?",
         max_steps=10,
     )

@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Optional
 
-from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -41,14 +39,14 @@ class Settings(BaseSettings):
 
     # LLM
     llm_provider: LLMProvider = LLMProvider.OPENAI
-    openai_api_key: Optional[str] = None
-    anthropic_api_key: Optional[str] = None
+    openai_api_key: str | None = None
+    anthropic_api_key: str | None = None
 
     # Tool API keys (BYO-API)
-    serpapi_key: Optional[str] = None
-    semantic_scholar_api_key: Optional[str] = None
-    ncbi_api_key: Optional[str] = None
-    openalex_email: Optional[str] = None
+    serpapi_key: str | None = None
+    semantic_scholar_api_key: str | None = None
+    ncbi_api_key: str | None = None
+    openalex_email: str | None = None
 
     # Security
     jwt_secret_key: str = "change-me-in-production"
@@ -58,9 +56,9 @@ class Settings(BaseSettings):
 
     # Object storage
     s3_bucket: str = "evidentia-docs"
-    s3_endpoint: Optional[str] = None
-    s3_access_key: Optional[str] = None
-    s3_secret_key: Optional[str] = None
+    s3_endpoint: str | None = None
+    s3_access_key: str | None = None
+    s3_secret_key: str | None = None
 
     # Execution budgets
     max_tool_calls_per_run: int = 50

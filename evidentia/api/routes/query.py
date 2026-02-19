@@ -81,6 +81,7 @@ async def _run_agent(run_id: str, query: str, user_id: uuid.UUID) -> None:
 
     try:
         from evidentia.agent.factory import build_agent
+
         agent = build_agent()
         result = await agent.run(query)
 

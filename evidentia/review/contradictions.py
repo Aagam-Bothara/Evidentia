@@ -31,10 +31,10 @@ logger = get_logger(__name__)
 class ContradictionType(str, Enum):
     """Taxonomy of scientific disagreements."""
 
-    EMPIRICAL = "empirical"           # Opposite empirical findings (e.g., different effect directions)
+    EMPIRICAL = "empirical"  # Opposite empirical findings (e.g., different effect directions)
     METHODOLOGICAL = "methodological"  # Different methods leading to different conclusions
-    INTERPRETIVE = "interpretive"      # Same data, different interpretations or framing
-    POPULATION = "population"          # Different results due to different study populations
+    INTERPRETIVE = "interpretive"  # Same data, different interpretations or framing
+    POPULATION = "population"  # Different results due to different study populations
     UNKNOWN = "unknown"
 
 
@@ -132,9 +132,7 @@ class ContradictionDetector:
     def __init__(self, llm: BaseLLM) -> None:
         self._llm = llm
 
-    async def detect(
-        self, papers: list[PaperRecord]
-    ) -> ContradictionReport:
+    async def detect(self, papers: list[PaperRecord]) -> ContradictionReport:
         """Analyze papers for contradictions."""
         if len(papers) < 2:
             return ContradictionReport(
@@ -147,7 +145,7 @@ class ContradictionDetector:
 
         # Process in overlapping windows to catch cross-batch contradictions
         for batch_start in range(0, len(papers), self.BATCH_SIZE):
-            batch = papers[batch_start: batch_start + self.BATCH_SIZE]
+            batch = papers[batch_start : batch_start + self.BATCH_SIZE]
             if len(batch) < 2:
                 continue
 
@@ -163,9 +161,7 @@ class ContradictionDetector:
 
         # Sort by severity then confidence
         severity_order = {"strong": 0, "moderate": 1, "mild": 2}
-        unique_contradictions.sort(
-            key=lambda c: (severity_order.get(c.severity, 1), -c.confidence)
-        )
+        unique_contradictions.sort(key=lambda c: (severity_order.get(c.severity, 1), -c.confidence))
 
         # Deduplicate consensus areas
         unique_consensus = list(dict.fromkeys(all_consensus))
@@ -186,9 +182,7 @@ class ContradictionDetector:
             type_distribution=type_dist,
         )
 
-    async def _analyze_batch(
-        self, papers: list[PaperRecord], offset: int = 0
-    ) -> ContradictionReport:
+    async def _analyze_batch(self, papers: list[PaperRecord], offset: int = 0) -> ContradictionReport:
         """Analyze a batch of papers for contradictions."""
         papers_text = self._format_papers(papers, offset)
 
@@ -247,19 +241,25 @@ class ContradictionDetector:
             except ValueError:
                 ctype = ContradictionType.UNKNOWN
 
-            contradictions.append(ContradictionPair(
-                paper_a_index=a_idx,
-                paper_b_index=b_idx,
-                paper_a_title=papers[a_local].title if 0 <= a_local < len(papers) else "",
-                paper_b_title=papers[b_local].title if 0 <= b_local < len(papers) else "",
-                dimension=raw.get("dimension", "unspecified"),
-                contradiction_type=ctype,
-                description=raw.get("description", ""),
-                severity=raw.get("severity", "moderate") if raw.get("severity") in ("mild", "moderate", "strong") else "moderate",
-                confidence=max(0.0, min(1.0, float(confidence))),
-                evidence_a=str(raw.get("evidence_a", "")),
-                evidence_b=str(raw.get("evidence_b", "")),
-            ))
+            contradictions.append(
+                ContradictionPair(
+                    paper_a_index=a_idx,
+                    paper_b_index=b_idx,
+                    paper_a_title=papers[a_local].title if 0 <= a_local < len(papers) else "",
+                    paper_b_title=papers[b_local].title if 0 <= b_local < len(papers) else "",
+                    dimension=raw.get("dimension", "unspecified"),
+                    contradiction_type=ctype,
+                    description=raw.get("description", ""),
+                    severity=(
+                        raw.get("severity", "moderate")
+                        if raw.get("severity") in ("mild", "moderate", "strong")
+                        else "moderate"
+                    ),
+                    confidence=max(0.0, min(1.0, float(confidence))),
+                    evidence_a=str(raw.get("evidence_a", "")),
+                    evidence_b=str(raw.get("evidence_b", "")),
+                )
+            )
 
         consensus = data.get("consensus_areas", [])
         summary = data.get("summary", "")
@@ -280,9 +280,7 @@ class ContradictionDetector:
         unique: list[ContradictionPair] = []
 
         for c in contradictions:
-            key = (min(c.paper_a_index, c.paper_b_index),
-                   max(c.paper_a_index, c.paper_b_index),
-                   c.dimension)
+            key = (min(c.paper_a_index, c.paper_b_index), max(c.paper_a_index, c.paper_b_index), c.dimension)
             if key not in seen:
                 seen.add(key)
                 unique.append(c)
@@ -298,7 +296,10 @@ class ContradictionDetector:
         """Build a human-readable summary."""
         if not contradictions:
             if consensus:
-                return f"No contradictions found across {total_papers} papers. Strong consensus on {len(consensus)} area(s)."
+                return (
+                    f"No contradictions found across {total_papers} papers."
+                    f" Strong consensus on {len(consensus)} area(s)."
+                )
             return f"No contradictions detected across {total_papers} papers."
 
         strong = sum(1 for c in contradictions if c.severity == "strong")

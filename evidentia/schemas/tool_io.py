@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
-
 # ── Tool contract ────────────────────────────────────────────────────
+
 
 class ToolInput(BaseModel):
     """Base class for all tool inputs."""
@@ -25,6 +25,7 @@ class ToolOutput(BaseModel):
 
 # ── Web Search ───────────────────────────────────────────────────────
 
+
 class WebSearchInput(ToolInput):
     query: str = Field(..., min_length=1, max_length=1000)
     max_results: int = Field(default=10, ge=1, le=50)
@@ -41,6 +42,7 @@ class WebSearchOutput(ToolOutput):
 
 
 # ── ArXiv ────────────────────────────────────────────────────────────
+
 
 class ArxivSearchInput(ToolInput):
     query: str = Field(..., min_length=1)
@@ -65,6 +67,7 @@ class ArxivSearchOutput(ToolOutput):
 
 # ── Python Sandbox ───────────────────────────────────────────────────
 
+
 class PythonSandboxInput(ToolInput):
     code: str = Field(..., min_length=1, max_length=10000)
     timeout_seconds: int = Field(default=30, ge=1, le=120)
@@ -77,6 +80,7 @@ class PythonSandboxOutput(ToolOutput):
 
 
 # ── PDF Ingestion ────────────────────────────────────────────────────
+
 
 class PDFIngestInput(ToolInput):
     url: str | None = None
@@ -100,6 +104,7 @@ class PDFIngestOutput(ToolOutput):
 
 # ── DOI / Crossref ──────────────────────────────────────────────────
 
+
 class DOILookupInput(ToolInput):
     doi: str
 
@@ -116,12 +121,11 @@ class DOILookupOutput(ToolOutput):
 
 # ── Semantic Scholar ─────────────────────────────────────────────────
 
+
 class SemanticScholarInput(ToolInput):
     query: str = Field(..., min_length=1)
     max_results: int = Field(default=10, ge=1, le=100)
-    fields: list[str] = Field(
-        default_factory=lambda: ["title", "abstract", "authors", "year", "citationCount", "url"]
-    )
+    fields: list[str] = Field(default_factory=lambda: ["title", "abstract", "authors", "year", "citationCount", "url"])
 
 
 class SemanticScholarPaper(BaseModel):
@@ -139,6 +143,7 @@ class SemanticScholarOutput(ToolOutput):
 
 
 # ── PubMed ──────────────────────────────────────────────────────────
+
 
 class PubMedSearchInput(ToolInput):
     query: str = Field(..., min_length=1)
@@ -161,6 +166,7 @@ class PubMedSearchOutput(ToolOutput):
 
 
 # ── OpenAlex ────────────────────────────────────────────────────────
+
 
 class OpenAlexSearchInput(ToolInput):
     query: str = Field(..., min_length=1)
@@ -185,6 +191,7 @@ class OpenAlexSearchOutput(ToolOutput):
 
 
 # ── CrossRef Search ─────────────────────────────────────────────────
+
 
 class CrossRefSearchInput(ToolInput):
     query: str = Field(..., min_length=1)

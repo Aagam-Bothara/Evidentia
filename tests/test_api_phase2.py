@@ -9,7 +9,6 @@ from fastapi.testclient import TestClient
 from evidentia.api.auth import AuthenticatedUser, require_auth
 from evidentia.api.server import app
 
-
 # Mock authenticated user for protected endpoints
 _mock_user = AuthenticatedUser(user_id=uuid.uuid4(), email="test@example.com")
 
@@ -104,9 +103,7 @@ def test_export_ris(client):
             {
                 "statement": "Test",
                 "confidence": "medium",
-                "citations": [
-                    {"source_id": "s1", "title": "RIS Paper", "authors": ["Bob"]}
-                ],
+                "citations": [{"source_id": "s1", "title": "RIS Paper", "authors": ["Bob"]}],
             }
         ],
         "format": "ris",
@@ -147,9 +144,7 @@ def test_export_json(client):
             {
                 "statement": "JSON claim",
                 "confidence": "high",
-                "citations": [
-                    {"source_id": "s1", "title": "JSON Paper", "authors": []}
-                ],
+                "citations": [{"source_id": "s1", "title": "JSON Paper", "authors": []}],
             }
         ],
         "format": "json",

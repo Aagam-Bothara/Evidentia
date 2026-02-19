@@ -12,7 +12,6 @@ from evidentia.review.contradictions import (
 )
 from evidentia.review.models import PaperRecord
 
-
 # -- Mock LLM ----------------------------------------------------------------
 
 
@@ -69,11 +68,13 @@ def _contradiction_response(
     consensus_areas: list[str] | None = None,
     summary: str = "",
 ) -> str:
-    return json.dumps({
-        "contradictions": contradictions,
-        "consensus_areas": consensus_areas or [],
-        "summary": summary,
-    })
+    return json.dumps(
+        {
+            "contradictions": contradictions,
+            "consensus_areas": consensus_areas or [],
+            "summary": summary,
+        }
+    )
 
 
 # -- detect() with fewer than 2 papers ---------------------------------------
@@ -470,11 +471,13 @@ async def test_consensus_areas_capped_at_ten():
 @pytest.mark.asyncio
 async def test_consensus_areas_non_list_ignored():
     """If consensus_areas is not a list (e.g., a string), it should be replaced with empty list."""
-    raw = json.dumps({
-        "contradictions": [],
-        "consensus_areas": "This is a string, not a list",
-        "summary": "",
-    })
+    raw = json.dumps(
+        {
+            "contradictions": [],
+            "consensus_areas": "This is a string, not a list",
+            "summary": "",
+        }
+    )
     llm = MockContradictionLLM([raw])
     detector = ContradictionDetector(llm)
 
@@ -493,12 +496,20 @@ def test_dedupe_identical_pairs():
 
     contradictions = [
         ContradictionPair(
-            paper_a_index=0, paper_b_index=1, dimension="effect_size",
-            description="First", severity="strong", confidence=0.9,
+            paper_a_index=0,
+            paper_b_index=1,
+            dimension="effect_size",
+            description="First",
+            severity="strong",
+            confidence=0.9,
         ),
         ContradictionPair(
-            paper_a_index=0, paper_b_index=1, dimension="effect_size",
-            description="Second (duplicate)", severity="moderate", confidence=0.8,
+            paper_a_index=0,
+            paper_b_index=1,
+            dimension="effect_size",
+            description="Second (duplicate)",
+            severity="moderate",
+            confidence=0.8,
         ),
     ]
     result = detector._dedupe_contradictions(contradictions)
@@ -513,12 +524,20 @@ def test_dedupe_reversed_indices():
 
     contradictions = [
         ContradictionPair(
-            paper_a_index=2, paper_b_index=5, dimension="conclusion",
-            description="From batch 1", severity="strong", confidence=0.9,
+            paper_a_index=2,
+            paper_b_index=5,
+            dimension="conclusion",
+            description="From batch 1",
+            severity="strong",
+            confidence=0.9,
         ),
         ContradictionPair(
-            paper_a_index=5, paper_b_index=2, dimension="conclusion",
-            description="From batch 2", severity="strong", confidence=0.85,
+            paper_a_index=5,
+            paper_b_index=2,
+            dimension="conclusion",
+            description="From batch 2",
+            severity="strong",
+            confidence=0.85,
         ),
     ]
     result = detector._dedupe_contradictions(contradictions)
@@ -533,12 +552,20 @@ def test_dedupe_different_dimensions_not_deduped():
 
     contradictions = [
         ContradictionPair(
-            paper_a_index=0, paper_b_index=1, dimension="effect_size",
-            description="Effect size disagreement", severity="strong", confidence=0.9,
+            paper_a_index=0,
+            paper_b_index=1,
+            dimension="effect_size",
+            description="Effect size disagreement",
+            severity="strong",
+            confidence=0.9,
         ),
         ContradictionPair(
-            paper_a_index=0, paper_b_index=1, dimension="methodology",
-            description="Methodological disagreement", severity="moderate", confidence=0.8,
+            paper_a_index=0,
+            paper_b_index=1,
+            dimension="methodology",
+            description="Methodological disagreement",
+            severity="moderate",
+            confidence=0.8,
         ),
     ]
     result = detector._dedupe_contradictions(contradictions)
@@ -569,20 +596,32 @@ def test_summary_with_mixed_severities():
     """Summary should break down severity counts."""
     contradictions = [
         ContradictionPair(
-            paper_a_index=0, paper_b_index=1, dimension="a",
-            severity="strong", confidence=0.9,
+            paper_a_index=0,
+            paper_b_index=1,
+            dimension="a",
+            severity="strong",
+            confidence=0.9,
         ),
         ContradictionPair(
-            paper_a_index=0, paper_b_index=2, dimension="b",
-            severity="strong", confidence=0.85,
+            paper_a_index=0,
+            paper_b_index=2,
+            dimension="b",
+            severity="strong",
+            confidence=0.85,
         ),
         ContradictionPair(
-            paper_a_index=1, paper_b_index=2, dimension="c",
-            severity="moderate", confidence=0.8,
+            paper_a_index=1,
+            paper_b_index=2,
+            dimension="c",
+            severity="moderate",
+            confidence=0.8,
         ),
         ContradictionPair(
-            paper_a_index=2, paper_b_index=3, dimension="d",
-            severity="mild", confidence=0.7,
+            paper_a_index=2,
+            paper_b_index=3,
+            dimension="d",
+            severity="mild",
+            confidence=0.7,
         ),
     ]
     summary = ContradictionDetector._build_summary(contradictions, [], 4)
@@ -596,8 +635,11 @@ def test_summary_with_contradictions_and_consensus():
     """Summary should mention both contradictions and consensus."""
     contradictions = [
         ContradictionPair(
-            paper_a_index=0, paper_b_index=1, dimension="a",
-            severity="moderate", confidence=0.8,
+            paper_a_index=0,
+            paper_b_index=1,
+            dimension="a",
+            severity="moderate",
+            confidence=0.8,
         ),
     ]
     consensus = ["Safety agreed", "Dosing agreed"]
@@ -727,7 +769,7 @@ async def test_batch_trailing_single_paper_skipped():
     detector.BATCH_SIZE = 2
 
     papers = _make_papers(3)
-    report = await detector.detect(papers)
+    _report = await detector.detect(papers)
 
     # Only one LLM call (the first batch of 2); trailing paper is skipped
     assert llm._call_index == 1

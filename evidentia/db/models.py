@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import (
     Boolean,
@@ -13,14 +13,13 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _new_uuid() -> uuid.UUID:
@@ -29,6 +28,7 @@ def _new_uuid() -> uuid.UUID:
 
 class Base(DeclarativeBase):
     """Base class for all ORM models."""
+
     pass
 
 
@@ -73,7 +73,12 @@ class RunRow(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
-    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=True, index=True)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("projects.id"),
+        nullable=True,
+        index=True,
+    )
     query: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -103,8 +108,16 @@ class ClaimRow(Base):
     position: Mapped[int] = mapped_column(Integer, default=0)
 
     run: Mapped[RunRow] = relationship(back_populates="claims")
-    citations: Mapped[list[CitationRow]] = relationship(back_populates="claim", lazy="selectin", cascade="all, delete-orphan")
-    evidence_spans: Mapped[list[EvidenceSpanRow]] = relationship(back_populates="claim", lazy="selectin", cascade="all, delete-orphan")
+    citations: Mapped[list[CitationRow]] = relationship(
+        back_populates="claim",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
+    evidence_spans: Mapped[list[EvidenceSpanRow]] = relationship(
+        back_populates="claim",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
 
 
 # ── Citations ───────────────────────────────────────────────────────
@@ -149,11 +162,21 @@ class DocumentRow(Base):
     __tablename__ = "documents"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
-    user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id"),
+        nullable=True,
+        index=True,
+    )
     source_type: Mapped[str] = mapped_column(String(20), nullable=False)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     content: Mapped[str] = mapped_column(Text, default="")
-    content_hash: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True, index=True)
+    content_hash: Mapped[str | None] = mapped_column(
+        String(64),
+        unique=True,
+        nullable=True,
+        index=True,
+    )
     url: Mapped[str | None] = mapped_column(Text, nullable=True)
     doi: Mapped[str | None] = mapped_column(String(255), nullable=True)
     metadata_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
@@ -167,7 +190,12 @@ class PDFUploadRow(Base):
     __tablename__ = "pdf_uploads"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
-    user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id"),
+        nullable=True,
+        index=True,
+    )
     filename: Mapped[str] = mapped_column(String(500), nullable=False)
     page_count: Mapped[int] = mapped_column(Integer, default=0)
     chunk_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -176,7 +204,11 @@ class PDFUploadRow(Base):
     file_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
-    chunks: Mapped[list[PDFChunkRow]] = relationship(back_populates="pdf", lazy="selectin", cascade="all, delete-orphan")
+    chunks: Mapped[list[PDFChunkRow]] = relationship(
+        back_populates="pdf",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
 
 
 # ── PDF Chunks ──────────────────────────────────────────────────────
@@ -186,7 +218,12 @@ class PDFChunkRow(Base):
     __tablename__ = "pdf_chunks"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
-    pdf_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("pdf_uploads.id"), nullable=False, index=True)
+    pdf_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("pdf_uploads.id"),
+        nullable=False,
+        index=True,
+    )
     text: Mapped[str] = mapped_column(Text, nullable=False)
     page_number: Mapped[int] = mapped_column(Integer, nullable=False)
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -204,7 +241,12 @@ class AnnotationRow(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    run_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("runs.id"), nullable=True, index=True)
+    run_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("runs.id"),
+        nullable=True,
+        index=True,
+    )
     claim_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     text: Mapped[str] = mapped_column(Text, nullable=False)
     annotation_type: Mapped[str] = mapped_column(String(20), default="note")
@@ -237,7 +279,11 @@ class TeamRow(Base):
     created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
-    members: Mapped[list[TeamMemberRow]] = relationship(back_populates="team", lazy="selectin", cascade="all, delete-orphan")
+    members: Mapped[list[TeamMemberRow]] = relationship(
+        back_populates="team",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
 
 
 class TeamMemberRow(Base):

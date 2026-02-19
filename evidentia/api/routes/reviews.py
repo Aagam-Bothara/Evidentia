@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -16,12 +16,10 @@ from evidentia.review.feedback import FeedbackStore
 from evidentia.review.models import PaperRecord
 from evidentia.schemas.review import (
     BulkDecisionRequest,
-    ContradictionReportResponse,
     PaperDecisionRequest,
     PaperListResponse,
     PaperResponse,
     PRISMAFlowResponse,
-    QualityScoreResponse,
     ReviewCreateRequest,
     ReviewExportRequest,
     ReviewListResponse,
@@ -44,10 +42,15 @@ def _paper_to_response(p: dict[str, Any]) -> PaperResponse:
     criteria_evals = None
     if raw_evals and isinstance(raw_evals, list):
         from evidentia.schemas.review import CriterionEvaluationResponse
+
         criteria_evals = [
             CriterionEvaluationResponse(
                 criterion=e.get("criterion", "") if isinstance(e, dict) else getattr(e, "criterion", ""),
-                criterion_type=e.get("criterion_type", "inclusion") if isinstance(e, dict) else getattr(e, "criterion_type", "inclusion"),
+                criterion_type=(
+                    e.get("criterion_type", "inclusion")
+                    if isinstance(e, dict)
+                    else getattr(e, "criterion_type", "inclusion")
+                ),
                 met=e.get("met") if isinstance(e, dict) else getattr(e, "met", None),
                 rationale=e.get("rationale", "") if isinstance(e, dict) else getattr(e, "rationale", ""),
                 evidence_span=e.get("evidence_span", "") if isinstance(e, dict) else getattr(e, "evidence_span", ""),
@@ -120,7 +123,7 @@ async def create_review(
 
     # Fallback
     review_id = uuid.uuid4().hex[:12]
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     _review_store[review_id] = {
         "id": review_id,
         "user_id": str(user.user_id),
@@ -359,9 +362,7 @@ async def update_paper_decision(
             if review is None or review.user_id != user.user_id:
                 raise HTTPException(status_code=404, detail="Review not found")
 
-            row = await repo.update_paper_decision(
-                uuid.UUID(paper_id), body.decision, body.reason
-            )
+            row = await repo.update_paper_decision(uuid.UUID(paper_id), body.decision, body.reason)
             if row is None:
                 raise HTTPException(status_code=404, detail="Paper not found")
             await db.commit()
@@ -441,9 +442,7 @@ async def bulk_decide(
             factory = _get_session_factory()
             async with factory() as db:
                 repo = ReviewRepository(db)
-                row = await repo.update_paper_decision(
-                    uuid.UUID(paper_id), decision, reason
-                )
+                row = await repo.update_paper_decision(uuid.UUID(paper_id), decision, reason)
                 if row:
                     await db.commit()
                     updated += 1
@@ -485,9 +484,7 @@ async def export_review(
             review = await repo.get(uuid.UUID(review_id))
             if review is None or review.user_id != user.user_id:
                 raise HTTPException(status_code=404, detail="Review not found")
-            rows = await repo.get_papers(
-                uuid.UUID(review_id), include_duplicates=False
-            )
+            rows = await repo.get_papers(uuid.UUID(review_id), include_duplicates=False)
             papers = [
                 PaperRecord(
                     title=r.title,

@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Any
 
 from evidentia.core.logging import get_logger
-from evidentia.core.models import Source, SourceType
+from evidentia.core.models import Source
 
 logger = get_logger(__name__)
 

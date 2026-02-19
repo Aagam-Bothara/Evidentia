@@ -32,18 +32,18 @@ evidence sufficiency, confidence scoring — is SYSTEM logic.
 
 from __future__ import annotations
 
-import asyncio
-from datetime import datetime, timezone
-from typing import Any, AsyncGenerator
+from collections.abc import AsyncGenerator
+from datetime import UTC, datetime
+from typing import Any
 
-from evidentia.agent.decomposer import QueryDecomposer, ResearchPlan, SubQuestion
+from evidentia.agent.decomposer import QueryDecomposer, ResearchPlan
 from evidentia.agent.evidence_graph import EvidenceGraph, EvidenceStatus
 from evidentia.agent.executor import ToolExecutor
-from evidentia.agent.synthesizer import Synthesizer, SynthesisResult
+from evidentia.agent.synthesizer import Synthesizer
 from evidentia.agent.tool_selector import ToolSelector
 from evidentia.core.llm import BaseLLM
 from evidentia.core.logging import get_logger
-from evidentia.core.models import Claim, Run, RunStatus
+from evidentia.core.models import Claim
 from evidentia.tools.base import ToolRegistry
 
 logger = get_logger(__name__)
@@ -55,7 +55,7 @@ class AgentEvent:
     def __init__(self, event_type: str, data: dict[str, Any]) -> None:
         self.type = event_type
         self.data = data
-        self.timestamp = datetime.now(timezone.utc)
+        self.timestamp = datetime.now(UTC)
 
     def to_dict(self) -> dict[str, Any]:
         return {"type": self.type, "data": self.data, "timestamp": self.timestamp.isoformat()}
@@ -140,14 +140,20 @@ class EvidentiAgent:
         if output:
             return output
         return AgentOutput(
-            query=query, summary="Agent failed.", claims=[], evidence_summary={},
+            query=query,
+            summary="Agent failed.",
+            claims=[],
+            evidence_summary={},
             plan=ResearchPlan(original_query=query, sub_questions=[]),
-            total_tool_calls=0, total_iterations=0, elapsed_seconds=0, success=False,
+            total_tool_calls=0,
+            total_iterations=0,
+            elapsed_seconds=0,
+            success=False,
         )
 
     async def stream(self, query: str) -> AsyncGenerator[AgentEvent, None]:
         """Execute the agent, yielding events for the UI."""
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
 
         yield AgentEvent("run_started", {"query": query})
 
@@ -160,13 +166,16 @@ class EvidentiAgent:
             yield AgentEvent("error", {"message": f"Failed to decompose query: {exc}"})
             return
 
-        yield AgentEvent("plan_ready", {
-            "scope": plan.scope,
-            "sub_questions": [
-                {"id": sq.id, "question": sq.question, "evidence_type": sq.evidence_type.value}
-                for sq in plan.sub_questions
-            ],
-        })
+        yield AgentEvent(
+            "plan_ready",
+            {
+                "scope": plan.scope,
+                "sub_questions": [
+                    {"id": sq.id, "question": sq.question, "evidence_type": sq.evidence_type.value}
+                    for sq in plan.sub_questions
+                ],
+            },
+        )
 
         # ── Initialize evidence graph ────────────────────────────────
         graph = EvidenceGraph(min_evidence_per_question=self._min_evidence)
@@ -178,18 +187,17 @@ class EvidentiAgent:
 
         # ── Steps 2-4: SELECT → EXECUTE → CHECK (loop) ──────────────
         for iteration in range(self._max_iterations):
-            yield AgentEvent("phase", {
-                "phase": "gather",
-                "iteration": iteration + 1,
-                "message": f"Gathering evidence (round {iteration + 1})...",
-            })
+            yield AgentEvent(
+                "phase",
+                {
+                    "phase": "gather",
+                    "iteration": iteration + 1,
+                    "message": f"Gathering evidence (round {iteration + 1})...",
+                },
+            )
 
             # Step 2: SYSTEM selects tools (no LLM)
-            ready_questions = plan.get_ready_questions(
-                completed_ids={
-                    s.question_id for s in graph.get_answered()
-                }
-            )
+            ready_questions = plan.get_ready_questions(completed_ids={s.question_id for s in graph.get_answered()})
 
             if not ready_questions:
                 # All questions either answered or blocked
@@ -207,11 +215,14 @@ class EvidentiAgent:
 
             # Emit what tools we're calling
             for sel in selections:
-                yield AgentEvent("tool_calling", {
-                    "tool": sel.tool_name,
-                    "question": sq_map[sel.question_id].question,
-                    "reason": sel.reason,
-                })
+                yield AgentEvent(
+                    "tool_calling",
+                    {
+                        "tool": sel.tool_name,
+                        "question": sq_map[sel.question_id].question,
+                        "reason": sel.reason,
+                    },
+                )
 
             # Step 3: SYSTEM executes tools (no LLM)
             if self._executor.total_calls >= self._max_tool_calls:
@@ -222,47 +233,62 @@ class EvidentiAgent:
 
             for result in results:
                 if result.success:
-                    yield AgentEvent("tool_result", {
-                        "tool": result.tool_name,
-                        "question_id": result.question_id,
-                        "evidence_count": len(result.fragments),
-                        "summary": self._summarize_fragments(result.fragments),
-                    })
+                    yield AgentEvent(
+                        "tool_result",
+                        {
+                            "tool": result.tool_name,
+                            "question_id": result.question_id,
+                            "evidence_count": len(result.fragments),
+                            "summary": self._summarize_fragments(result.fragments),
+                        },
+                    )
                 else:
-                    yield AgentEvent("tool_error", {
-                        "tool": result.tool_name,
-                        "question_id": result.question_id,
-                        "error": result.error or "Unknown error",
-                    })
+                    yield AgentEvent(
+                        "tool_error",
+                        {
+                            "tool": result.tool_name,
+                            "question_id": result.question_id,
+                            "error": result.error or "Unknown error",
+                        },
+                    )
 
                     # System fallback: try next tool for this question
                     sq = sq_map.get(result.question_id)
                     if sq:
                         fallback = self._selector.get_fallback(result.question_id, sq, graph)
                         if fallback:
-                            yield AgentEvent("fallback", {
-                                "from_tool": result.tool_name,
-                                "to_tool": fallback.tool_name,
-                                "question_id": result.question_id,
-                            })
+                            yield AgentEvent(
+                                "fallback",
+                                {
+                                    "from_tool": result.tool_name,
+                                    "to_tool": fallback.tool_name,
+                                    "question_id": result.question_id,
+                                },
+                            )
                             fb_results = await self._executor.execute_batch([fallback], graph)
                             for fb in fb_results:
                                 if fb.success:
-                                    yield AgentEvent("tool_result", {
-                                        "tool": fb.tool_name,
-                                        "question_id": fb.question_id,
-                                        "evidence_count": len(fb.fragments),
-                                        "summary": self._summarize_fragments(fb.fragments),
-                                    })
+                                    yield AgentEvent(
+                                        "tool_result",
+                                        {
+                                            "tool": fb.tool_name,
+                                            "question_id": fb.question_id,
+                                            "evidence_count": len(fb.fragments),
+                                            "summary": self._summarize_fragments(fb.fragments),
+                                        },
+                                    )
 
             # Step 4: SYSTEM checks evidence sufficiency (no LLM)
             ev_summary = graph.summary()
-            yield AgentEvent("evidence_check", {
-                "coverage": ev_summary["coverage"],
-                "answered": ev_summary["answered"],
-                "gaps": ev_summary["gaps"],
-                "total_evidence": ev_summary["total_evidence_fragments"],
-            })
+            yield AgentEvent(
+                "evidence_check",
+                {
+                    "coverage": ev_summary["coverage"],
+                    "answered": ev_summary["answered"],
+                    "gaps": ev_summary["gaps"],
+                    "total_evidence": ev_summary["total_evidence_fragments"],
+                },
+            )
 
             if graph.is_sufficient(required_ids):
                 logger.info("evidence_sufficient", coverage=ev_summary["coverage"])
@@ -275,7 +301,7 @@ class EvidentiAgent:
 
         synthesis = await self._synthesizer.synthesize(plan, graph)
 
-        elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
+        elapsed = (datetime.now(UTC) - start_time).total_seconds()
 
         output = AgentOutput(
             query=query,
@@ -284,20 +310,23 @@ class EvidentiAgent:
             evidence_summary=graph.summary(),
             plan=plan,
             total_tool_calls=self._executor.total_calls,
-            total_iterations=min(iteration + 1, self._max_iterations) if 'iteration' in dir() else 0,
+            total_iterations=min(iteration + 1, self._max_iterations) if "iteration" in dir() else 0,
             elapsed_seconds=elapsed,
             success=len(synthesis.claims) > 0,
         )
 
-        yield AgentEvent("completed", {
-            "summary": synthesis.summary,
-            "claims": [c.model_dump() for c in synthesis.claims],
-            "evidence_summary": graph.summary(),
-            "total_tool_calls": self._executor.total_calls,
-            "total_iterations": output.total_iterations,
-            "elapsed_seconds": elapsed,
-            "_output": output,  # Internal: for non-streaming .run() method
-        })
+        yield AgentEvent(
+            "completed",
+            {
+                "summary": synthesis.summary,
+                "claims": [c.model_dump() for c in synthesis.claims],
+                "evidence_summary": graph.summary(),
+                "total_tool_calls": self._executor.total_calls,
+                "total_iterations": output.total_iterations,
+                "elapsed_seconds": elapsed,
+                "_output": output,  # Internal: for non-streaming .run() method
+            },
+        )
 
     @staticmethod
     def _summarize_fragments(fragments: list) -> str:

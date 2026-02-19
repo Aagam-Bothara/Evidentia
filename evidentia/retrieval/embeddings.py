@@ -11,10 +11,7 @@ try:
 except ImportError:
     SentenceTransformer = None  # type: ignore[assignment, misc]
 
-_INSTALL_MSG = (
-    "sentence-transformers is required for vector search. "
-    "Install it with: pip install evidentia[retrieval]"
-)
+_INSTALL_MSG = "sentence-transformers is required for vector search. Install it with: pip install evidentia[retrieval]"
 
 
 class EmbeddingService:

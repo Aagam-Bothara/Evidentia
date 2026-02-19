@@ -12,8 +12,8 @@ This is deterministic system logic. No LLM involved.
 
 from __future__ import annotations
 
-from evidentia.agent.decomposer import EVIDENCE_TOOL_MAP, EvidenceType, SubQuestion
-from evidentia.agent.evidence_graph import EvidenceGraph, SubQuestionState
+from evidentia.agent.decomposer import EVIDENCE_TOOL_MAP, SubQuestion
+from evidentia.agent.evidence_graph import EvidenceGraph
 from evidentia.core.logging import get_logger
 from evidentia.tools.base import ToolRegistry
 
@@ -147,7 +147,7 @@ class ToolSelector:
             q = question.rstrip("?").strip()
             for word in ["What are", "What is", "How does", "Why do", "Can you explain"]:
                 if q.lower().startswith(word.lower()):
-                    q = q[len(word):].strip()
+                    q = q[len(word) :].strip()
             return q
 
         if tool_name == "doi_lookup":

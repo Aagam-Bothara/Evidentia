@@ -86,17 +86,19 @@ class OpenAlexTool(BaseTool):
             oa = result.get("open_access", {})
             oa_url = oa.get("oa_url")
 
-            works.append(OpenAlexWork(
-                work_id=result.get("id", ""),
-                title=result.get("title") or "",
-                abstract=abstract,
-                authors=authors,
-                published_date=result.get("publication_date", ""),
-                doi=doi,
-                cited_by_count=result.get("cited_by_count"),
-                open_access_url=oa_url,
-                url=result.get("id", ""),
-            ))
+            works.append(
+                OpenAlexWork(
+                    work_id=result.get("id", ""),
+                    title=result.get("title") or "",
+                    abstract=abstract,
+                    authors=authors,
+                    published_date=result.get("publication_date", ""),
+                    doi=doi,
+                    cited_by_count=result.get("cited_by_count"),
+                    open_access_url=oa_url,
+                    url=result.get("id", ""),
+                )
+            )
 
         output = OpenAlexSearchOutput(data=works)
         return output.model_dump()
