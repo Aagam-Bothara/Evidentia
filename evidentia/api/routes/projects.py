@@ -365,3 +365,96 @@ async def list_project_runs(
         raise HTTPException(status_code=404, detail="Project not found")
 
     return {"runs": _project_runs.get(project_id, [])}
+
+
+# ── Collaborators (in-memory) ──────────────────────────────────────
+# Maps project_id → list of {email, role, added_at}
+_project_collaborators: dict[str, list[dict[str, str]]] = {}
+
+
+class CollaboratorAdd(BaseModel):
+    email: str
+    role: str = "editor"
+
+
+@router.get("/projects/{project_id}/collaborators")
+async def list_collaborators(
+    project_id: str,
+    user: AuthenticatedUser = Depends(require_auth),
+) -> dict[str, Any]:
+    """List collaborators for a project."""
+    project = _project_store.get(project_id)
+    if project is None or project["user_id"] != str(user.user_id):
+        # Check if user is a collaborator
+        collabs = _project_collaborators.get(project_id, [])
+        if not any(c["email"] == user.email for c in collabs):
+            raise HTTPException(status_code=404, detail="Project not found")
+
+    owner = _project_store.get(project_id, {})
+    owner_email = ""
+    # Find owner email from auth in-memory store
+    try:
+        from evidentia.api.routes.auth import _user_store
+
+        for _uid, udata in _user_store.items():
+            if udata.get("user_id") == owner.get("user_id"):
+                owner_email = udata.get("email", "")
+                break
+    except Exception:
+        pass
+
+    collabs = _project_collaborators.get(project_id, [])
+    return {
+        "owner": {"email": owner_email, "role": "owner"},
+        "collaborators": collabs,
+    }
+
+
+@router.post("/projects/{project_id}/collaborators")
+async def add_collaborator(
+    project_id: str,
+    body: CollaboratorAdd,
+    user: AuthenticatedUser = Depends(require_auth),
+) -> dict[str, str]:
+    """Add a collaborator to a project by email."""
+    project = _project_store.get(project_id)
+    if project is None or project["user_id"] != str(user.user_id):
+        raise HTTPException(status_code=403, detail="Only the project owner can add collaborators")
+
+    if project_id not in _project_collaborators:
+        _project_collaborators[project_id] = []
+
+    # Don't add duplicates
+    existing = _project_collaborators[project_id]
+    if any(c["email"] == body.email for c in existing):
+        raise HTTPException(status_code=409, detail="User already a collaborator")
+
+    new_collab = {
+        "email": body.email,
+        "role": body.role,
+        "added_at": datetime.now(UTC).isoformat(),
+    }
+    existing.append(new_collab)
+    logger.info("collaborator_added", project=project_id, email=body.email)
+    return {"status": "added", "email": body.email, "role": body.role}
+
+
+@router.delete("/projects/{project_id}/collaborators/{email}")
+async def remove_collaborator(
+    project_id: str,
+    email: str,
+    user: AuthenticatedUser = Depends(require_auth),
+) -> dict[str, str]:
+    """Remove a collaborator from a project."""
+    project = _project_store.get(project_id)
+    if project is None or project["user_id"] != str(user.user_id):
+        raise HTTPException(status_code=403, detail="Only the project owner can remove collaborators")
+
+    collabs = _project_collaborators.get(project_id, [])
+    before = len(collabs)
+    _project_collaborators[project_id] = [c for c in collabs if c["email"] != email]
+    if len(_project_collaborators[project_id]) == before:
+        raise HTTPException(status_code=404, detail="Collaborator not found")
+
+    logger.info("collaborator_removed", project=project_id, email=email)
+    return {"status": "removed", "email": email}

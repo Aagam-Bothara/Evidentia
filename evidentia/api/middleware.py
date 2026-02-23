@@ -23,6 +23,10 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
     """Generate a unique request ID for every request and bind to structlog."""
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        # BaseHTTPMiddleware breaks WebSocket — skip for WS upgrades
+        if request.scope.get("type") == "websocket":
+            return await call_next(request)
+
         request_id = request.headers.get("X-Request-Id") or uuid.uuid4().hex
         structlog.contextvars.bind_contextvars(request_id=request_id)
 
@@ -40,6 +44,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add standard security headers to all responses."""
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        if request.scope.get("type") == "websocket":
+            return await call_next(request)
+
         response = await call_next(request)
 
         response.headers["X-Content-Type-Options"] = "nosniff"
@@ -70,6 +77,9 @@ class ErrorSanitizationMiddleware(BaseHTTPMiddleware):
     """Catch unhandled exceptions — sanitize in production, verbose in dev."""
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        if request.scope.get("type") == "websocket":
+            return await call_next(request)
+
         try:
             return await call_next(request)
         except Exception as exc:

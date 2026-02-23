@@ -28,7 +28,7 @@
   <!-- ───────────────────────── Sidebar ───────────────────────── -->
   <aside id="sidebar" class="sidebar" aria-label="Sidebar">
     <div class="sidebar-header">
-      <div class="sidebar-brand">
+      <a id="brand-home" class="sidebar-brand" href="#" aria-label="Go to home">
         <svg class="brand-icon" width="32" height="32" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="brandGrad" x1="0" y1="0" x2="64" y2="64"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#14b8a6"/></linearGradient>
@@ -53,7 +53,7 @@
           <circle cx="30" cy="40" r="1.2" fill="#c4b5fd" class="spark-dot"><animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite"/></circle>
         </svg>
         <span class="brand-name">Evidentia</span>
-      </div>
+      </a>
       <button id="sidebar-close" class="sidebar-close" aria-label="Close sidebar">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </button>
@@ -131,6 +131,11 @@
       </ul>
     </section>
 
+    <section class="sidebar-section" id="sidebar-documents" style="display:none;">
+      <h3 class="sidebar-title">Documents</h3>
+      <ul id="document-list" class="sidebar-list"></ul>
+    </section>
+
     <!-- Account & Settings -->
     <div class="sidebar-account">
       <div class="sidebar-account-info">
@@ -186,21 +191,69 @@
         </div>
       </section>
 
-      <!-- LLM API Keys Section -->
+      <!-- BYO-API Keys Section -->
       <section class="settings-section">
-        <h3 class="settings-section-title">LLM Provider Keys</h3>
-        <p class="settings-help">These are configured server-side via environment variables. Contact your admin to update them.</p>
-        <div class="settings-field">
-          <label>OpenAI / Anthropic</label>
-          <div class="settings-value settings-value--mono">Configured on server</div>
+        <h3 class="settings-section-title">BYO-API Keys</h3>
+        <p class="settings-help">Enter your own API keys. These override server defaults for your account only.</p>
+
+        <div class="settings-field" data-service="openai">
+          <label>OpenAI API Key</label>
+          <div class="settings-api-key-row">
+            <input type="password" class="settings-key-input" id="key-openai" placeholder="sk-..." autocomplete="off" />
+            <span class="settings-key-status" id="key-status-openai"></span>
+            <button class="btn btn-primary btn-sm settings-key-save" data-service="openai">Save</button>
+            <button class="btn btn-ghost btn-sm settings-key-delete" data-service="openai" style="display:none;">Remove</button>
+          </div>
         </div>
-        <div class="settings-field">
+
+        <div class="settings-field" data-service="anthropic">
+          <label>Anthropic API Key</label>
+          <div class="settings-api-key-row">
+            <input type="password" class="settings-key-input" id="key-anthropic" placeholder="sk-ant-..." autocomplete="off" />
+            <span class="settings-key-status" id="key-status-anthropic"></span>
+            <button class="btn btn-primary btn-sm settings-key-save" data-service="anthropic">Save</button>
+            <button class="btn btn-ghost btn-sm settings-key-delete" data-service="anthropic" style="display:none;">Remove</button>
+          </div>
+        </div>
+
+        <div class="settings-field" data-service="serpapi">
+          <label>SerpAPI Key</label>
+          <div class="settings-api-key-row">
+            <input type="password" class="settings-key-input" id="key-serpapi" placeholder="Your SerpAPI key" autocomplete="off" />
+            <span class="settings-key-status" id="key-status-serpapi"></span>
+            <button class="btn btn-primary btn-sm settings-key-save" data-service="serpapi">Save</button>
+            <button class="btn btn-ghost btn-sm settings-key-delete" data-service="serpapi" style="display:none;">Remove</button>
+          </div>
+        </div>
+
+        <div class="settings-field" data-service="semantic_scholar">
           <label>Semantic Scholar API Key</label>
-          <div class="settings-value settings-value--mono">Optional — set S2_API_KEY env var</div>
+          <div class="settings-api-key-row">
+            <input type="password" class="settings-key-input" id="key-semantic_scholar" placeholder="Your S2 API key" autocomplete="off" />
+            <span class="settings-key-status" id="key-status-semantic_scholar"></span>
+            <button class="btn btn-primary btn-sm settings-key-save" data-service="semantic_scholar">Save</button>
+            <button class="btn btn-ghost btn-sm settings-key-delete" data-service="semantic_scholar" style="display:none;">Remove</button>
+          </div>
         </div>
-        <div class="settings-field">
+
+        <div class="settings-field" data-service="ncbi">
           <label>NCBI / PubMed API Key</label>
-          <div class="settings-value settings-value--mono">Optional — set NCBI_API_KEY env var</div>
+          <div class="settings-api-key-row">
+            <input type="password" class="settings-key-input" id="key-ncbi" placeholder="Your NCBI API key" autocomplete="off" />
+            <span class="settings-key-status" id="key-status-ncbi"></span>
+            <button class="btn btn-primary btn-sm settings-key-save" data-service="ncbi">Save</button>
+            <button class="btn btn-ghost btn-sm settings-key-delete" data-service="ncbi" style="display:none;">Remove</button>
+          </div>
+        </div>
+
+        <div class="settings-field" data-service="openalex">
+          <label>OpenAlex Contact Email</label>
+          <div class="settings-api-key-row">
+            <input type="email" class="settings-key-input" id="key-openalex" placeholder="you@example.com" autocomplete="off" />
+            <span class="settings-key-status" id="key-status-openalex"></span>
+            <button class="btn btn-primary btn-sm settings-key-save" data-service="openalex">Save</button>
+            <button class="btn btn-ghost btn-sm settings-key-delete" data-service="openalex" style="display:none;">Remove</button>
+          </div>
         </div>
       </section>
 
@@ -224,6 +277,17 @@
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </button>
       <div class="topbar-spacer"></div>
+      <button id="darkModeToggle" class="topbar-btn dark-mode-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">
+        <svg id="darkModeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+      <button id="chatToggle" class="topbar-btn chat-toggle" title="Team Chat" style="display:none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span class="chat-unread" id="chatUnread" style="display:none">0</span>
+      </button>
       <button id="new-query-btn" class="btn btn-ghost btn-sm" style="display:none;">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         New Query
@@ -257,13 +321,34 @@
           Research with <span class="gradient-text">Evidentia</span>
         </h1>
         <p class="hero-subtitle">
-          Ask a research question. The agent decomposes it, gathers evidence from academic sources, and returns verified claims with full citations.
+          AI-powered research agent that decomposes questions, gathers evidence across academic databases, and returns verified claims with full citations.
         </p>
+
+        <!-- Trust badges -->
+        <div class="hero-trust-bar">
+          <span class="trust-badge">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1.5"/></svg>
+            7 Databases
+          </span>
+          <span class="trust-badge">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M13.5 4.5l-7 7L3 8"/></svg>
+            PRISMA Compliant
+          </span>
+          <span class="trust-badge">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 3h12M2 7h8M2 11h10"/></svg>
+            Full Citations
+          </span>
+          <span class="trust-badge">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="2" width="10" height="12" rx="1"/><path d="M6 5h4M6 8h4M6 11h2"/></svg>
+            LaTeX Export
+          </span>
+        </div>
 
         <!-- Mode tabs -->
         <div class="mode-tabs">
           <button id="mode-query" class="mode-tab mode-tab--active" data-mode="query">Quick Research</button>
           <button id="mode-review" class="mode-tab" data-mode="review">Systematic Review</button>
+          <button id="mode-write" class="mode-tab" data-mode="write">Writing</button>
         </div>
 
         <!-- Project selector -->
@@ -320,6 +405,33 @@
             <span id="upload-status" class="upload-status">Uploading...</span>
           </div>
         </div>
+
+        <!-- Feature Cards -->
+        <div class="feature-cards">
+          <div class="feature-card">
+            <div class="feature-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M8 8l6 6"/></svg>
+            </div>
+            <div class="feature-card-title">Multi-Source Search</div>
+            <div class="feature-card-desc">Queries PubMed, Semantic Scholar, OpenAlex, ArXiv, CrossRef, and more in parallel.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4"/><path d="M3 9h18M3 15h18"/></svg>
+            </div>
+            <div class="feature-card-title">Provenance Tracking</div>
+            <div class="feature-card-desc">Every claim links back to its source with full citation chains and confidence scores.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>
+            </div>
+            <div class="feature-card-title">Academic Writing</div>
+            <div class="feature-card-desc">Built-in LaTeX editor with 10+ templates, auto-conversion, and BibTeX/RIS export.</div>
+          </div>
+        </div>
+
+        <div class="hero-powered">Powered by GPT-4o &middot; Built for researchers</div>
 
         <!-- ─── Systematic Review Form (hidden by default) ─── -->
         <div id="review-form-section" class="review-form-section" style="display:none;">
@@ -401,6 +513,33 @@
               Start Systematic Review
             </button>
           </form>
+
+          <!-- Import Bibliography -->
+          <div class="import-library-section">
+            <button id="import-library-btn" class="btn btn-outline btn-sm" style="width:100%;margin-top:8px;">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1v10M4 7l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Import Library (.bib / .ris)
+            </button>
+            <input type="file" id="bib-file-input" accept=".bib,.ris" hidden />
+          </div>
+        </div>
+
+        <!-- Writing form section -->
+        <div id="writing-form-section" style="display:none;">
+          <div class="writing-documents-header">
+            <h3>Your Documents</h3>
+            <button id="new-doc-btn" class="btn btn-primary btn-sm">+ New Document</button>
+          </div>
+          <div id="writing-doc-list" class="writing-doc-list"></div>
+        </div>
+
+        <!-- Template picker (shown when creating new doc) -->
+        <div id="template-picker" class="template-picker" style="display:none;">
+          <div class="template-picker-header">
+            <h3>Choose a Template</h3>
+            <button id="template-picker-close" class="btn btn-ghost btn-sm">&times;</button>
+          </div>
+          <div id="template-grid" class="template-grid"></div>
         </div>
 
       </div>
@@ -463,6 +602,17 @@
               <button class="btn btn-xs btn-outline" data-export="bibtex">BibTeX</button>
               <button class="btn btn-xs btn-outline" data-export="ris">RIS</button>
               <button class="btn btn-xs btn-outline" data-export="apa">APA</button>
+              <button class="btn btn-xs btn-outline" data-export="csl-json">CSL-JSON</button>
+              <button id="zotero-export-btn" class="btn btn-xs btn-outline">Zotero</button>
+              <button id="citation-graph-btn" class="btn btn-xs btn-outline" style="display:none;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="5" y2="16"/><line x1="12" y1="8" x2="19" y2="16"/></svg>
+                Citation Graph
+              </button>
+              <button id="extract-table-btn" class="btn btn-xs btn-outline" style="display:none;">Extract Table</button>
+              <button id="provenance-btn" class="btn btn-xs btn-outline" style="display:none;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4"/><path d="M3 9h18M3 15h18"/></svg>
+                Provenance
+              </button>
             </div>
           </div>
 
@@ -474,6 +624,173 @@
             <div class="results-placeholder">
               <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.3"/><path d="M24 16v8l6 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/></svg>
               <p>Results will appear here once the agent completes its analysis.</p>
+            </div>
+          </div>
+
+          <!-- Data Extraction Table -->
+          <div id="extraction-table-container" class="extraction-table-container" style="display:none;">
+            <div class="extraction-table-header">
+              <h3 class="extraction-table-title">Extracted Data</h3>
+              <button id="synthesize-btn" class="btn btn-xs btn-primary synthesis-btn">Synthesize</button>
+              <button id="extraction-table-close" class="btn btn-ghost btn-xs">&times;</button>
+            </div>
+            <div class="extraction-table-scroll">
+              <table id="extraction-table" class="extraction-table">
+                <thead>
+                  <tr>
+                    <th data-sort="source">Source</th>
+                    <th data-sort="authors">Authors</th>
+                    <th data-sort="year">Year</th>
+                    <th data-sort="method">Method</th>
+                    <th data-sort="sample_size">Sample</th>
+                    <th data-sort="key_finding">Key Finding</th>
+                    <th data-sort="outcome">Outcome</th>
+                    <th data-sort="confidence">Conf.</th>
+                  </tr>
+                </thead>
+                <tbody id="extraction-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Statistical Synthesis Panel -->
+          <div id="synthesis-container" class="synthesis-container" style="display:none;">
+            <div class="synthesis-header">
+              <h3 class="synthesis-title">Statistical Synthesis</h3>
+              <button id="synthesis-close" class="btn btn-ghost btn-xs">&times;</button>
+            </div>
+
+            <!-- Summary Statistics Card -->
+            <div id="synthesis-summary" class="synthesis-summary">
+              <div class="synthesis-pooled">
+                <div class="synthesis-pooled-label">Pooled Effect Size</div>
+                <div class="synthesis-pooled-value" id="synthesis-pooled-effect">--</div>
+                <div class="synthesis-pooled-ci" id="synthesis-pooled-ci">95% CI: [-- , --]</div>
+              </div>
+              <div class="synthesis-meta-grid">
+                <div class="synthesis-meta-item">
+                  <span class="synthesis-meta-label">Model</span>
+                  <span class="synthesis-meta-value" id="synthesis-model">--</span>
+                </div>
+                <div class="synthesis-meta-item">
+                  <span class="synthesis-meta-label">Studies (k)</span>
+                  <span class="synthesis-meta-value" id="synthesis-k">--</span>
+                </div>
+                <div class="synthesis-meta-item">
+                  <span class="synthesis-meta-label">Total N</span>
+                  <span class="synthesis-meta-value" id="synthesis-total-n">--</span>
+                </div>
+                <div class="synthesis-meta-item">
+                  <span class="synthesis-meta-label">p-value</span>
+                  <span class="synthesis-meta-value" id="synthesis-p-value">--</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Forest Plot -->
+            <div class="synthesis-forest-wrap">
+              <div class="synthesis-forest-label">Forest Plot</div>
+              <canvas id="forest-plot-canvas" width="800" height="400"></canvas>
+            </div>
+
+            <!-- Heterogeneity Card -->
+            <div class="synthesis-heterogeneity">
+              <div class="synthesis-heterogeneity-header">
+                <span class="synthesis-section-label">Heterogeneity</span>
+                <span class="synthesis-i2-badge" id="synthesis-i2-badge">--</span>
+              </div>
+              <div class="synthesis-i2-gauge-wrap">
+                <div class="synthesis-i2-gauge">
+                  <div class="synthesis-i2-gauge-fill" id="synthesis-i2-fill" style="width:0%"></div>
+                </div>
+                <div class="synthesis-i2-scale">
+                  <span>0%</span>
+                  <span>Low &lt;25%</span>
+                  <span>Moderate</span>
+                  <span>High &gt;75%</span>
+                  <span>100%</span>
+                </div>
+              </div>
+              <div class="synthesis-het-stats">
+                <div class="synthesis-het-stat">
+                  <span class="synthesis-het-stat-label">I&sup2;</span>
+                  <span class="synthesis-het-stat-value" id="synthesis-i2-value">--</span>
+                </div>
+                <div class="synthesis-het-stat">
+                  <span class="synthesis-het-stat-label">Q statistic</span>
+                  <span class="synthesis-het-stat-value" id="synthesis-q-value">--</span>
+                </div>
+                <div class="synthesis-het-stat">
+                  <span class="synthesis-het-stat-label">Q p-value</span>
+                  <span class="synthesis-het-stat-value" id="synthesis-q-p-value">--</span>
+                </div>
+                <div class="synthesis-het-stat">
+                  <span class="synthesis-het-stat-label">&tau;&sup2;</span>
+                  <span class="synthesis-het-stat-value" id="synthesis-tau2-value">--</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Study Weights Table -->
+            <div class="synthesis-weights">
+              <div class="synthesis-section-label">Study Weights</div>
+              <div class="synthesis-weights-scroll">
+                <table class="synthesis-weights-table" id="synthesis-weights-table">
+                  <thead>
+                    <tr>
+                      <th data-sort-synth="label">Study</th>
+                      <th data-sort-synth="effect">Effect</th>
+                      <th data-sort-synth="ci">95% CI</th>
+                      <th data-sort-synth="weight">Weight</th>
+                      <th data-sort-synth="n">N</th>
+                    </tr>
+                  </thead>
+                  <tbody id="synthesis-weights-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Citation Graph -->
+          <div id="citation-graph-container" class="citation-graph-container" style="display:none;">
+            <div class="citation-graph-header">
+              <h3 class="citation-graph-title">Citation Network</h3>
+              <div class="citation-graph-legend">
+                <span class="legend-item"><span class="legend-dot claim-dot"></span>Claims</span>
+                <span class="legend-item"><span class="legend-dot source-dot"></span>Sources</span>
+              </div>
+              <button id="citation-graph-close" class="btn btn-ghost btn-xs">&times;</button>
+            </div>
+            <canvas id="citation-graph-canvas" width="800" height="500"></canvas>
+            <div id="citation-graph-tooltip" class="citation-graph-tooltip" style="display:none;"></div>
+          </div>
+
+          <!-- Provenance Chain Panel -->
+          <div id="provenance-panel" class="provenance-panel" style="display:none;">
+            <div class="provenance-header">
+              <h3 class="provenance-title">Provenance Chain</h3>
+              <div class="provenance-header-right">
+                <div id="provenance-coverage" class="provenance-coverage">
+                  <span class="provenance-coverage-label">Coverage:</span>
+                  <div class="provenance-coverage-bar">
+                    <div id="provenance-coverage-fill" class="provenance-coverage-fill" style="width:0%"></div>
+                  </div>
+                  <span id="provenance-coverage-pct" class="provenance-coverage-pct">0%</span>
+                </div>
+                <button id="provenance-close" class="btn btn-ghost btn-xs">&times;</button>
+              </div>
+            </div>
+            <div id="provenance-links" class="provenance-links">
+              <!-- Provenance link cards injected here -->
+            </div>
+            <div id="provenance-ungrounded" class="provenance-ungrounded" style="display:none;">
+              <div class="provenance-ungrounded-header">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1l7 13H1L8 1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 6v3M8 11.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                <span>Ungrounded Claims</span>
+              </div>
+              <div id="provenance-ungrounded-list" class="provenance-ungrounded-list">
+                <!-- Ungrounded claim items injected here -->
+              </div>
             </div>
           </div>
         </div>
@@ -488,6 +805,10 @@
         <span id="review-mode-badge" class="review-mode-badge" style="display:none;"></span>
         <span id="review-query-text" class="active-query-text"></span>
         <span id="review-run-hash" class="review-run-hash" style="display:none;" title="Reproducibility hash"></span>
+        <span id="reproducible-badge" class="reproducible-badge" style="display:none;">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13.5 4.5l-7 7L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Reproducible &amp; Validated
+        </span>
       </div>
 
       <!-- PRISMA Phase Progress -->
@@ -528,6 +849,21 @@
         <div class="prisma-panel glass-panel">
           <div class="panel-header">
             <h2 class="panel-title">PRISMA Flow</h2>
+            <div class="prisma-panel-actions" id="prisma-panel-actions" style="display:none;">
+              <button id="prisma-download-btn" class="btn btn-xs btn-outline prisma-download-btn">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 1v10M4 7l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                PRISMA
+              </button>
+              <div id="prisma-download-menu" class="dropdown-menu" style="display:none;">
+                <button class="dropdown-item" data-prisma-format="svg">Download SVG</button>
+                <button class="dropdown-item" data-prisma-format="png">Download PNG</button>
+                <button class="dropdown-item" data-prisma-format="preview">Preview SVG</button>
+              </div>
+              <button id="validate-review-btn" class="btn btn-xs btn-outline">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M13.5 4.5l-7 7L3 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Validate
+              </button>
+            </div>
             <span id="review-elapsed" class="phase-badge">0s</span>
           </div>
           <div id="prisma-flow" class="prisma-flow">
@@ -612,31 +948,629 @@
       </div>
     </section>
 
+    <!-- ─── Writing Workspace ─── -->
+    <section id="writing-workspace" class="workspace" style="display:none;">
+      <div class="writing-banner">
+        <input id="writing-title" class="writing-title-input" value="Untitled" />
+        <div class="writing-controls">
+          <div class="writing-mode-toggle">
+            <button id="writing-mode-plain" class="mode-pill mode-pill--active">Plain English</button>
+            <button id="writing-mode-latex" class="mode-pill">LaTeX</button>
+          </div>
+          <div class="writing-layout-toggle">
+            <button id="writing-layout-split" class="layout-btn layout-btn--active" title="Split view">&#x2BCE;</button>
+            <button id="writing-layout-full" class="layout-btn" title="Full width">&#x25AD;</button>
+          </div>
+          <label class="auto-convert-toggle">
+            <input type="checkbox" id="writing-auto-convert" />
+            <span>Auto-convert</span>
+          </label>
+          <button id="writing-convert-btn" class="btn btn-outline btn-sm">Convert to LaTeX</button>
+          <button id="writing-export-btn" class="btn btn-outline btn-sm">Export .tex</button>
+          <button id="writing-save-btn" class="btn btn-primary btn-sm">Save</button>
+        </div>
+      </div>
+
+      <div id="writing-editor" class="writing-editor writing-editor--split">
+        <div class="writing-pane writing-pane--editor">
+          <div class="panel-header">
+            <span class="panel-title" id="writing-editor-label">Plain English</span>
+            <span class="writing-word-count" id="writing-word-count">0 words</span>
+          </div>
+          <textarea id="writing-input" class="writing-textarea" placeholder="Start writing your research paper..."></textarea>
+        </div>
+
+        <div class="writing-pane writing-pane--preview" id="writing-preview-pane">
+          <div class="panel-header">
+            <span class="panel-title">LaTeX Output</span>
+            <button id="writing-copy-latex" class="btn btn-ghost btn-sm">Copy</button>
+          </div>
+          <pre id="writing-latex-output" class="writing-latex-pre"><code></code></pre>
+        </div>
+      </div>
+
+      <div class="writing-status-bar">
+        <span id="writing-status">Ready</span>
+        <span id="writing-autosave-status"></span>
+      </div>
+    </section>
+
+    <!-- ── Ask PDF Panel ──────────────────────────────────────── -->
+    <div id="ask-pdf-panel" class="ask-pdf-panel glass-panel" style="display:none;">
+      <div class="panel-header">
+        <h2 class="panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Ask PDF
+        </h2>
+        <span id="ask-pdf-filename" class="ask-pdf-filename"></span>
+        <button id="ask-pdf-close" class="btn btn-ghost btn-sm">&times;</button>
+      </div>
+      <div id="ask-pdf-conversation" class="ask-pdf-conversation">
+        <div class="ask-pdf-empty">Ask any question about this document...</div>
+      </div>
+      <form id="ask-pdf-form" class="ask-pdf-form">
+        <input type="text" id="ask-pdf-input" placeholder="Ask about this PDF..." autocomplete="off" />
+        <button type="submit" class="btn btn-primary btn-sm">Ask</button>
+      </form>
+    </div>
+
   </main>
 
-  <!-- ─── Auth Modal ─── -->
-  <div id="auth-overlay" class="auth-overlay" style="display:none;">
-    <div class="auth-modal glass-panel">
-      <div class="auth-header">
-        <h2 class="auth-title">Welcome to <span class="gradient-text">Evidentia</span></h2>
-        <p class="auth-subtitle" id="auth-subtitle">Enter your email and password to continue</p>
+  <!-- ── Chat Panel ─────────────────────────────────────────── -->
+  <aside id="chatPanel" class="chat-panel">
+    <div class="chat-panel-header">
+      <div class="chat-panel-title-row">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <div class="chat-title-stack">
+          <span class="chat-panel-title">Project Chat</span>
+          <span class="chat-panel-subtitle" id="chatProjectName"></span>
+        </div>
       </div>
-      <form id="auth-form" class="auth-form" autocomplete="off">
-        <div class="auth-field">
-          <label for="auth-email">Email</label>
-          <input type="email" id="auth-email" placeholder="you@example.com" required />
+      <div class="chat-presence" id="chatPresence"></div>
+      <button id="chatClose" class="chat-close-btn" title="Close chat">&times;</button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-empty">No messages yet. Start the conversation!</div>
+    </div>
+    <div class="chat-typing" id="chatTyping"></div>
+    <!-- Emoji Picker -->
+    <div id="chatEmojiPicker" class="chat-picker chat-emoji-picker" style="display:none;">
+      <div class="emoji-grid" id="emojiGrid"></div>
+    </div>
+    <!-- GIF Picker -->
+    <div id="chatGifPicker" class="chat-picker chat-gif-picker" style="display:none;">
+      <div class="chat-picker-header">
+        <input type="text" id="gifSearchInput" class="gif-search-input" placeholder="Search GIFs..." autocomplete="off" />
+      </div>
+      <div class="gif-grid" id="gifGrid">
+        <div class="gif-loading">Search for GIFs</div>
+      </div>
+      <div class="gif-powered">Powered by GIPHY</div>
+    </div>
+    <!-- Attachment Preview -->
+    <div id="chatAttachPreview" class="chat-attach-preview" style="display:none;">
+      <img id="chatAttachThumb" class="chat-attach-thumb" style="display:none;" />
+      <svg id="chatAttachIcon" class="chat-attach-icon" width="20" height="20" viewBox="0 0 16 16" fill="none" style="display:none;"><path d="M9 1H4a1 1 0 00-1 1v12a1 1 0 001 1h8a1 1 0 001-1V5L9 1z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 1v4h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span id="chatAttachName" class="chat-attach-name"></span>
+      <button type="button" id="chatAttachRemove" class="chat-attach-remove" title="Remove">&times;</button>
+    </div>
+    <!-- Chat Form -->
+    <form class="chat-input-form" id="chatForm" autocomplete="off">
+      <div class="chat-input-row">
+        <div class="chat-toolbar">
+          <button type="button" id="chatEmojiBtn" class="chat-toolbar-btn" title="Emoji">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+          </button>
+          <button type="button" id="chatAttachBtn" class="chat-toolbar-btn" title="Attach file">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+          </button>
+          <button type="button" id="chatGifBtn" class="chat-toolbar-btn chat-gif-label" title="Send GIF">GIF</button>
         </div>
-        <div class="auth-field">
-          <label for="auth-password">Password</label>
-          <input type="password" id="auth-password" placeholder="Min. 8 characters" required minlength="8" />
+        <input type="text" id="chatInput" class="chat-input" placeholder="Message your team..." maxlength="2000">
+        <button type="submit" class="chat-send-btn" title="Send">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+      <input type="file" id="chatFileInput" hidden accept="image/*,.pdf,.doc,.docx,.txt,.csv" />
+    </form>
+  </aside>
+
+  <!-- ─── New Project Modal ─── -->
+  <div id="project-modal-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal-panel glass-panel">
+      <div class="modal-header">
+        <h2 class="modal-title">New Project</h2>
+        <button id="project-modal-close" class="modal-close-btn" aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <form id="project-modal-form" autocomplete="off">
+        <div class="modal-field">
+          <label for="project-modal-name">Project Name</label>
+          <input type="text" id="project-modal-name" placeholder="e.g., COVID-19 Neurology Review" required maxlength="100" />
         </div>
-        <div id="auth-error" class="auth-error" style="display:none;"></div>
-        <button type="submit" id="auth-submit" class="btn btn-primary auth-submit">Continue</button>
+        <div id="project-modal-error" class="modal-error" style="display:none;"></div>
+        <button type="submit" id="project-modal-submit" class="btn btn-primary" style="width:100%;margin-top:4px;">Create Project</button>
       </form>
-      <p class="auth-hint">New users are automatically registered.</p>
-      <div class="auth-switch" style="display:none;">
-        <span id="auth-switch-text"></span>
-        <button id="auth-switch-btn" class="btn btn-ghost btn-sm" type="button"></button>
+    </div>
+  </div>
+
+  <!-- ─── Project Settings Modal ─── -->
+  <div id="project-settings-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal-panel glass-panel">
+      <div class="modal-header">
+        <h2 class="modal-title">Project Settings</h2>
+        <button id="project-settings-close" class="modal-close-btn" aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <form id="project-settings-form" autocomplete="off">
+        <div class="modal-field">
+          <label for="project-settings-name">Project Name</label>
+          <input type="text" id="project-settings-name" required maxlength="100" />
+        </div>
+        <div class="modal-field">
+          <label for="project-settings-desc">Description</label>
+          <textarea id="project-settings-desc" rows="2" maxlength="500" placeholder="Optional description..." style="resize:vertical;"></textarea>
+        </div>
+        <div id="project-settings-error" class="modal-error" style="display:none;"></div>
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:4px;">Save Changes</button>
+      </form>
+
+      <!-- Members Section -->
+      <hr style="border:none;border-top:1px solid var(--border);margin:16px 0 12px;">
+      <div class="modal-members-section">
+        <h3 class="modal-members-title">Members</h3>
+        <div id="project-members-list" class="modal-members-list"></div>
+        <div class="modal-members-add">
+          <input type="email" id="project-add-member-email" placeholder="Add by email..." class="modal-members-input" />
+          <button id="project-add-member-btn" class="btn btn-sm btn-primary" type="button">Add</button>
+        </div>
+        <div id="project-member-error" class="modal-error" style="display:none;margin-top:4px;"></div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin:16px 0 12px;">
+      <button id="project-settings-delete" class="btn btn-sm" style="width:100%;background:var(--error);color:#fff;border:none;">Delete Project</button>
+    </div>
+  </div>
+
+  <!-- ─── Auth / Welcome Landing Page ─── -->
+  <div id="auth-overlay" class="auth-overlay" style="display:none;">
+    <div class="welcome-page">
+
+      <!-- Fixed top nav -->
+      <nav class="welcome-nav">
+        <div class="welcome-nav-inner">
+          <div class="welcome-nav-brand">
+            <svg width="28" height="28" viewBox="0 0 64 64" fill="none">
+              <defs>
+                <linearGradient id="authGrad" x1="0" y1="0" x2="64" y2="64"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#14b8a6"/></linearGradient>
+                <linearGradient id="authLoop" x1="20" y1="10" x2="44" y2="54"><stop stop-color="#a5b4fc"/><stop offset="1" stop-color="#5eead4"/></linearGradient>
+              </defs>
+              <path d="M30 12c-6 0-11 3-13 8-1.5 3.5-1 7.5 1 11 1.5 2.5 2 5.5 1.5 8.5-.5 3 1 5.5 4 6.5 2 .7 4.5.5 6.5-.5V12z" fill="url(#authGrad)" opacity="0.9"/>
+              <path d="M34 12c6 0 11 3 13 8 1.5 3.5 1 7.5-1 11-1.5 2.5-2 5.5-1.5 8.5.5 3-1 5.5-4 6.5-2 .7-4.5.5-6.5-.5V12z" fill="url(#authGrad)" opacity="0.7"/>
+              <path d="M32 6a26 26 0 0 1 18 7.5" stroke="url(#authLoop)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+              <path d="M50 13.5l-1.5-5 5-1" stroke="url(#authLoop)" stroke-width="2" stroke-linecap="round" fill="none"/>
+              <circle cx="26" cy="26" r="1.5" fill="#a5b4fc"><animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite"/></circle>
+              <circle cx="38" cy="34" r="1.5" fill="#5eead4"><animate attributeName="opacity" values="0.3;1;0.3" dur="2.5s" repeatCount="indefinite"/></circle>
+            </svg>
+            <span>Evidentia</span>
+          </div>
+          <div class="welcome-nav-links">
+            <a href="#welcome-features" class="welcome-nav-link">Features</a>
+            <a href="#welcome-how" class="welcome-nav-link">How It Works</a>
+            <a href="#welcome-auth" class="welcome-nav-link">Sign In</a>
+            <button id="welcome-get-started-top" class="btn btn-primary btn-sm">Get Started</button>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Hero Section -->
+      <section class="welcome-hero">
+        <div class="welcome-hero-inner">
+          <div class="welcome-hero-badge">AI-Powered Research Agent</div>
+          <h1 class="welcome-hero-title">Evidence-based research,<br>automated.</h1>
+          <p class="welcome-hero-subtitle">
+            Evidentia decomposes your research questions, searches across 7 academic databases simultaneously, and returns verified claims with full citations and provenance chains.
+          </p>
+          <div class="welcome-hero-actions">
+            <button id="welcome-get-started-hero" class="btn btn-primary btn-lg">Get Started — It's Free</button>
+            <a href="#welcome-features" class="btn btn-outline btn-lg">Learn More</a>
+          </div>
+          <div class="welcome-hero-stats">
+            <div class="welcome-stat">
+              <span class="welcome-stat-value">7</span>
+              <span class="welcome-stat-label">Databases</span>
+            </div>
+            <div class="welcome-stat-divider"></div>
+            <div class="welcome-stat">
+              <span class="welcome-stat-value">10+</span>
+              <span class="welcome-stat-label">LaTeX Templates</span>
+            </div>
+            <div class="welcome-stat-divider"></div>
+            <div class="welcome-stat">
+              <span class="welcome-stat-value">PRISMA</span>
+              <span class="welcome-stat-label">Compliant</span>
+            </div>
+            <div class="welcome-stat-divider"></div>
+            <div class="welcome-stat">
+              <span class="welcome-stat-value">100%</span>
+              <span class="welcome-stat-label">Open Source</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features Section -->
+      <section id="welcome-features" class="welcome-section">
+        <div class="welcome-section-inner">
+          <div class="welcome-section-header">
+            <span class="welcome-section-badge">Capabilities</span>
+            <h2 class="welcome-section-title">Everything you need for rigorous research</h2>
+            <p class="welcome-section-desc">From quick literature searches to publication-grade systematic reviews, Evidentia handles the entire research workflow.</p>
+          </div>
+          <div class="welcome-features-grid">
+            <div class="welcome-feature-card">
+              <div class="welcome-feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              </div>
+              <h3 class="welcome-feature-title">Multi-Source Search</h3>
+              <p class="welcome-feature-desc">Parallel queries across PubMed, Semantic Scholar, OpenAlex, ArXiv, CrossRef, and more. Results are deduplicated and ranked.</p>
+            </div>
+            <div class="welcome-feature-card">
+              <div class="welcome-feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4"/><path d="M3 9h18M3 15h18"/></svg>
+              </div>
+              <h3 class="welcome-feature-title">Systematic Reviews</h3>
+              <p class="welcome-feature-desc">PRISMA 2020-compliant pipeline with identification, deduplication, multi-pass screening, quality scoring, and contradiction analysis.</p>
+            </div>
+            <div class="welcome-feature-card">
+              <div class="welcome-feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>
+              </div>
+              <h3 class="welcome-feature-title">Academic Writing</h3>
+              <p class="welcome-feature-desc">Built-in LaTeX editor with 10+ journal templates (IEEE, Nature, ACM, APA, etc.), plain-to-LaTeX conversion, and .tex export.</p>
+            </div>
+            <div class="welcome-feature-card">
+              <div class="welcome-feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <h3 class="welcome-feature-title">Provenance Tracking</h3>
+              <p class="welcome-feature-desc">Every claim is grounded in evidence with full citation chains, confidence scores, and reproducible fingerprints you can verify.</p>
+            </div>
+            <div class="welcome-feature-card">
+              <div class="welcome-feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+              </div>
+              <h3 class="welcome-feature-title">Statistical Synthesis</h3>
+              <p class="welcome-feature-desc">Automated meta-analysis with effect size extraction, forest plots, heterogeneity testing (I&sup2;, Q), and fixed/random-effects models.</p>
+            </div>
+            <div class="welcome-feature-card">
+              <div class="welcome-feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+              </div>
+              <h3 class="welcome-feature-title">Citation Export</h3>
+              <p class="welcome-feature-desc">Export to BibTeX, RIS, APA, CSL-JSON, or directly to Zotero. Import existing libraries in .bib or .ris format.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- How It Works Section -->
+      <section id="welcome-how" class="welcome-section welcome-section--alt">
+        <div class="welcome-section-inner">
+          <div class="welcome-section-header">
+            <span class="welcome-section-badge">Workflow</span>
+            <h2 class="welcome-section-title">How it works</h2>
+            <p class="welcome-section-desc">Three modes for every stage of your research.</p>
+          </div>
+          <div class="welcome-steps">
+            <div class="welcome-step">
+              <div class="welcome-step-number">01</div>
+              <h3 class="welcome-step-title">Quick Research</h3>
+              <p class="welcome-step-desc">Ask any research question. The AI agent decomposes it into sub-questions, searches academic databases, gathers evidence, and synthesizes verified claims with full citations.</p>
+            </div>
+            <div class="welcome-step">
+              <div class="welcome-step-number">02</div>
+              <h3 class="welcome-step-title">Systematic Review</h3>
+              <p class="welcome-step-desc">Define inclusion/exclusion criteria and databases. Evidentia runs a PRISMA-compliant pipeline: identify, deduplicate, screen, score quality, detect contradictions, and export results.</p>
+            </div>
+            <div class="welcome-step">
+              <div class="welcome-step-number">03</div>
+              <h3 class="welcome-step-title">Write &amp; Export</h3>
+              <p class="welcome-step-desc">Draft in plain English and auto-convert to LaTeX, or work directly in LaTeX with journal templates. Export .tex files, BibTeX citations, and PRISMA flow diagrams.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Auth / Get Started Section -->
+      <section id="welcome-auth" class="welcome-section welcome-section--auth">
+        <div class="welcome-section-inner">
+          <div class="welcome-auth-container">
+            <div class="welcome-auth-info">
+              <h2 class="welcome-auth-title">Start researching in seconds</h2>
+              <p class="welcome-auth-desc">Create a free account to get started. No credit card required.</p>
+              <ul class="welcome-auth-bullets">
+                <li>
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 4.5l-7 7L3 8"/></svg>
+                  Access to all 7 academic databases
+                </li>
+                <li>
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 4.5l-7 7L3 8"/></svg>
+                  Unlimited quick research queries
+                </li>
+                <li>
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 4.5l-7 7L3 8"/></svg>
+                  Full systematic review pipeline
+                </li>
+                <li>
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 4.5l-7 7L3 8"/></svg>
+                  LaTeX writing workspace with templates
+                </li>
+              </ul>
+            </div>
+            <div class="welcome-auth-form-wrap">
+              <div class="auth-header">
+                <h2 class="auth-title">Get Started</h2>
+                <p class="auth-subtitle" id="auth-subtitle">Enter your email and password</p>
+              </div>
+              <form id="auth-form" class="auth-form" autocomplete="off">
+                <div class="auth-field">
+                  <label for="auth-email">Email</label>
+                  <input type="email" id="auth-email" placeholder="you@example.com" required />
+                </div>
+                <div class="auth-field">
+                  <label for="auth-password">Password</label>
+                  <input type="password" id="auth-password" placeholder="Min. 8 characters" required minlength="8" />
+                </div>
+                <div id="auth-error" class="auth-error" style="display:none;"></div>
+                <button type="submit" id="auth-submit" class="btn btn-primary auth-submit">Create Account</button>
+              </form>
+              <p class="auth-hint">New users are automatically registered. Existing users will be signed in.</p>
+              <div class="auth-switch" style="display:none;">
+                <span id="auth-switch-text"></span>
+                <button id="auth-switch-btn" class="btn btn-ghost btn-sm" type="button"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="welcome-footer">
+        <div class="welcome-footer-inner">
+          <div class="welcome-footer-brand">
+            <svg width="24" height="24" viewBox="0 0 64 64" fill="none">
+              <path d="M30 12c-6 0-11 3-13 8-1.5 3.5-1 7.5 1 11 1.5 2.5 2 5.5 1.5 8.5-.5 3 1 5.5 4 6.5 2 .7 4.5.5 6.5-.5V12z" fill="url(#authGrad)" opacity="0.9"/>
+              <path d="M34 12c6 0 11 3 13 8 1.5 3.5 1 7.5-1 11-1.5 2.5-2 5.5-1.5 8.5.5 3-1 5.5-4 6.5-2 .7-4.5.5-6.5-.5V12z" fill="url(#authGrad)" opacity="0.7"/>
+            </svg>
+            <span>Evidentia</span>
+          </div>
+          <div class="welcome-footer-links">
+            <div class="welcome-footer-col">
+              <h4>Product</h4>
+              <a href="#welcome-features">Features</a>
+              <a href="#welcome-how">How It Works</a>
+              <a href="#welcome-auth">Get Started</a>
+            </div>
+            <div class="welcome-footer-col">
+              <h4>Resources</h4>
+              <a href="https://github.com" target="_blank" rel="noopener">Documentation</a>
+              <a href="https://github.com" target="_blank" rel="noopener">API Reference</a>
+              <a href="https://github.com" target="_blank" rel="noopener">Changelog</a>
+            </div>
+            <div class="welcome-footer-col">
+              <h4>Community</h4>
+              <a href="https://github.com" target="_blank" rel="noopener">GitHub</a>
+              <a href="https://github.com" target="_blank" rel="noopener">Contribute</a>
+              <a href="https://github.com" target="_blank" rel="noopener">Report Issues</a>
+            </div>
+            <div class="welcome-footer-col">
+              <h4>Support</h4>
+              <a href="mailto:support@evidentia.ai">Contact</a>
+              <a href="https://github.com" target="_blank" rel="noopener">Discussions</a>
+              <a href="#welcome-auth">Sign In</a>
+            </div>
+          </div>
+          <div class="welcome-footer-bottom">
+            <span>&copy; 2025 Evidentia. Built for researchers, by researchers.</span>
+          </div>
+        </div>
+      </footer>
+
+    </div>
+  </div>
+
+  <!-- ─── Reproducibility Modal ─── -->
+  <div id="repro-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal-panel glass-panel repro-modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Reproducibility Fingerprint</h2>
+        <button id="repro-modal-close" class="modal-close-btn" aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <!-- Composite hash -->
+      <div class="repro-composite">
+        <span class="repro-label">Composite Hash</span>
+        <code class="repro-hash repro-hash--full" id="repro-composite-hash"></code>
+        <button id="repro-copy-btn" class="btn btn-ghost btn-xs" title="Copy fingerprint">Copy</button>
+      </div>
+
+      <!-- Sub-hashes -->
+      <div class="repro-subhashes">
+        <div class="repro-subhash-row">
+          <span class="repro-subhash-label">Query</span>
+          <code class="repro-hash repro-hash--sub" id="repro-query-hash"></code>
+        </div>
+        <div class="repro-subhash-row">
+          <span class="repro-subhash-label">Evidence</span>
+          <code class="repro-hash repro-hash--sub" id="repro-evidence-hash"></code>
+        </div>
+        <div class="repro-subhash-row">
+          <span class="repro-subhash-label">Claims</span>
+          <code class="repro-hash repro-hash--sub" id="repro-claims-hash"></code>
+        </div>
+        <div class="repro-subhash-row">
+          <span class="repro-subhash-label">Tool Calls</span>
+          <code class="repro-hash repro-hash--sub" id="repro-tool-calls-hash"></code>
+        </div>
+      </div>
+
+      <!-- Tool call audit trail -->
+      <div class="repro-audit-section">
+        <h3 class="repro-section-title">Tool Call Audit Trail</h3>
+        <div id="repro-audit-trail" class="repro-audit-trail">
+          <div class="repro-audit-empty">No tool calls recorded</div>
+        </div>
+      </div>
+
+      <!-- Verification -->
+      <div class="repro-actions">
+        <button id="repro-verify-btn" class="btn btn-primary btn-sm">Verify Integrity</button>
+        <span id="repro-verify-status" class="repro-verify-status"></span>
+      </div>
+
+      <!-- Comparison -->
+      <div class="repro-compare-section">
+        <h3 class="repro-section-title">Compare with Another Run</h3>
+        <div class="repro-compare-controls">
+          <select id="repro-compare-select" class="repro-compare-select">
+            <option value="">Select a run...</option>
+          </select>
+          <button id="repro-compare-btn" class="btn btn-sm btn-outline">Compare</button>
+        </div>
+        <div id="repro-compare-results" class="repro-compare-results" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── PRISMA Preview Modal ─── -->
+  <div id="prisma-preview-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal-panel glass-panel prisma-preview-modal">
+      <div class="modal-header">
+        <h2 class="modal-title">PRISMA Flow Diagram</h2>
+        <button id="prisma-preview-close" class="modal-close-btn" aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div id="prisma-preview-content" class="prisma-preview-content">
+        <div class="results-placeholder"><p>Loading PRISMA diagram...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Zotero Export Modal ─── -->
+  <div id="zotero-export-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal-panel glass-panel">
+      <div class="modal-header">
+        <h2 class="modal-title">Export to Zotero</h2>
+        <button id="zotero-export-close" class="modal-close-btn" aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <form id="zotero-export-form" autocomplete="off">
+        <div class="modal-field">
+          <label for="zotero-api-key">Zotero API Key</label>
+          <input type="text" id="zotero-api-key" placeholder="Your Zotero API key" required />
+        </div>
+        <div class="modal-field">
+          <label for="zotero-user-id">Zotero User ID</label>
+          <input type="text" id="zotero-user-id" placeholder="Your numeric user ID" required />
+        </div>
+        <div id="zotero-export-error" class="modal-error" style="display:none;"></div>
+        <div id="zotero-export-progress" class="zotero-progress" style="display:none;">
+          <span class="spinner"></span>
+          <span id="zotero-export-status">Exporting to Zotero...</span>
+        </div>
+        <button type="submit" id="zotero-export-submit" class="btn btn-primary" style="width:100%;margin-top:4px;">Export to Zotero</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ─── Validation Dashboard Modal ─── -->
+  <div id="validation-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal-panel glass-panel validation-modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Validate Review</h2>
+        <button id="validation-close" class="modal-close-btn" aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <!-- Validation Config -->
+      <div id="validation-config" class="validation-config">
+        <div class="modal-field">
+          <label>Gold Standard</label>
+          <div class="validation-gs-options">
+            <label class="review-mode-option">
+              <input type="radio" name="gold-standard" value="sample" checked />
+              <div class="review-mode-card">
+                <span class="review-mode-name">Built-in Sample</span>
+                <span class="review-mode-desc">Vitamin D supplementation (Cochrane)</span>
+              </div>
+            </label>
+            <label class="review-mode-option">
+              <input type="radio" name="gold-standard" value="custom" />
+              <div class="review-mode-card">
+                <span class="review-mode-name">Custom Gold Standard</span>
+                <span class="review-mode-desc">Upload a BibTeX file</span>
+              </div>
+            </label>
+          </div>
+        </div>
+        <div id="validation-custom-upload" class="modal-field" style="display:none;">
+          <label for="validation-bib-input">Upload BibTeX file</label>
+          <input type="file" id="validation-bib-input" accept=".bib" />
+        </div>
+        <div id="validation-error" class="modal-error" style="display:none;"></div>
+        <button id="validation-run-btn" class="btn btn-primary" style="width:100%;margin-top:8px;">Run Validation</button>
+      </div>
+
+      <!-- Validation Results -->
+      <div id="validation-results" class="validation-results" style="display:none;">
+
+        <!-- Confusion Matrix -->
+        <div class="validation-section">
+          <h3 class="validation-section-title">Confusion Matrix</h3>
+          <table class="confusion-matrix">
+            <thead>
+              <tr><th></th><th>Predicted Positive</th><th>Predicted Negative</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="cm-label">Actual Positive</td><td class="cm-cell cm-tp" id="val-tp">0</td><td class="cm-cell cm-fn" id="val-fn">0</td></tr>
+              <tr><td class="cm-label">Actual Negative</td><td class="cm-cell cm-fp" id="val-fp">0</td><td class="cm-cell cm-tn" id="val-tn">0</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Metrics Cards -->
+        <div class="validation-section">
+          <h3 class="validation-section-title">Metrics</h3>
+          <div class="validation-metrics">
+            <div class="metric-card" id="metric-sensitivity"><span class="metric-value">--</span><span class="metric-label">Sensitivity</span></div>
+            <div class="metric-card" id="metric-specificity"><span class="metric-value">--</span><span class="metric-label">Specificity</span></div>
+            <div class="metric-card" id="metric-precision"><span class="metric-value">--</span><span class="metric-label">Precision</span></div>
+            <div class="metric-card" id="metric-f1"><span class="metric-value">--</span><span class="metric-label">F1 Score</span></div>
+            <div class="metric-card" id="metric-accuracy"><span class="metric-value">--</span><span class="metric-label">Accuracy</span></div>
+          </div>
+        </div>
+
+        <!-- Paper Lists -->
+        <div class="validation-section">
+          <h3 class="validation-section-title">Matched Papers</h3>
+          <div id="val-matched-list" class="validation-paper-list"></div>
+        </div>
+        <div class="validation-section">
+          <h3 class="validation-section-title">Missed Papers (False Negatives)</h3>
+          <div id="val-missed-list" class="validation-paper-list"></div>
+        </div>
+        <div class="validation-section">
+          <h3 class="validation-section-title">Extra Papers (False Positives)</h3>
+          <div id="val-extra-list" class="validation-paper-list"></div>
+        </div>
       </div>
     </div>
   </div>

@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from evidentia.agent.agent import EvidentiAgent
-from evidentia.core.config import Settings, get_settings
-from evidentia.core.llm import create_llm
+from evidentia.core.config import LLMProvider, Settings, get_settings
+from evidentia.core.llm import AnthropicLLM, OpenAILLM, create_llm
 from evidentia.tools.arxiv import ArxivTool
 from evidentia.tools.base import ToolRegistry
 from evidentia.tools.crossref_search import CrossRefSearchTool
@@ -76,3 +76,101 @@ def build_agent(settings: Settings | None = None) -> EvidentiAgent:
         max_tool_calls=settings.max_tool_calls_per_run,
         min_evidence_per_question=2,
     )
+
+
+# ── Per-user key resolution (BYO-API vault) ─────────────────────
+
+
+async def _resolve_key(
+    vault, user_id: str, service: str, server_fallback: str | None
+) -> str | None:
+    """Try user's vault key first, fall back to server config."""
+    try:
+        connector = f"user:{user_id}"
+        return await vault.get_credential(connector, service)
+    except Exception:
+        return server_fallback
+
+
+def _create_llm_with_key(settings: Settings, openai_key: str | None, anthropic_key: str | None):
+    """Create an LLM client using resolved per-user keys."""
+    if settings.llm_provider == LLMProvider.OPENAI and openai_key:
+        return OpenAILLM(api_key=openai_key)
+    elif settings.llm_provider == LLMProvider.ANTHROPIC and anthropic_key:
+        return AnthropicLLM(api_key=anthropic_key)
+    return create_llm(settings)
+
+
+async def _build_tool_registry_for_user(
+    settings: Settings, user_id: str, vault
+) -> ToolRegistry:
+    """Build a tool registry using per-user keys with server fallback."""
+    registry = ToolRegistry()
+
+    serpapi_key = await _resolve_key(vault, user_id, "serpapi", settings.serpapi_key)
+    s2_key = await _resolve_key(vault, user_id, "semantic_scholar", settings.semantic_scholar_api_key)
+    ncbi_key = await _resolve_key(vault, user_id, "ncbi", settings.ncbi_api_key)
+    openalex_email = await _resolve_key(vault, user_id, "openalex", settings.openalex_email)
+
+    registry.register(ArxivTool())
+    registry.register(DOILookupTool())
+    registry.register(PythonSandboxTool())
+    registry.register(CrossRefSearchTool())
+    registry.register(OpenAlexTool(contact_email=openalex_email))
+
+    if s2_key:
+        registry.register(SemanticScholarTool(api_key=s2_key))
+    else:
+        registry.register(SemanticScholarTool())
+
+    registry.register(PubMedTool(api_key=ncbi_key))
+
+    if serpapi_key:
+        registry.register(WebSearchTool(api_key=serpapi_key))
+
+    return registry
+
+
+async def build_agent_for_user(
+    user_id: str, settings: Settings | None = None
+) -> EvidentiAgent:
+    """Create an agent with per-user API keys (vault first, server fallback)."""
+    from evidentia.api.routes.keys import _get_vault
+
+    if settings is None:
+        settings = get_settings()
+
+    vault = _get_vault()
+    openai_key = await _resolve_key(vault, user_id, "openai", settings.openai_api_key)
+    anthropic_key = await _resolve_key(vault, user_id, "anthropic", settings.anthropic_api_key)
+
+    llm = _create_llm_with_key(settings, openai_key, anthropic_key)
+    registry = await _build_tool_registry_for_user(settings, user_id, vault)
+
+    return EvidentiAgent(
+        llm=llm,
+        tool_registry=registry,
+        max_iterations=5,
+        max_tool_calls=settings.max_tool_calls_per_run,
+        min_evidence_per_question=2,
+    )
+
+
+async def build_review_engine_for_user(
+    user_id: str, settings: Settings | None = None
+):
+    """Create a SystematicReviewEngine with per-user API keys."""
+    from evidentia.api.routes.keys import _get_vault
+    from evidentia.review.engine import SystematicReviewEngine
+
+    if settings is None:
+        settings = get_settings()
+
+    vault = _get_vault()
+    openai_key = await _resolve_key(vault, user_id, "openai", settings.openai_api_key)
+    anthropic_key = await _resolve_key(vault, user_id, "anthropic", settings.anthropic_api_key)
+
+    llm = _create_llm_with_key(settings, openai_key, anthropic_key)
+    registry = await _build_tool_registry_for_user(settings, user_id, vault)
+
+    return SystematicReviewEngine(llm=llm, tool_registry=registry)

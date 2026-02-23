@@ -6,6 +6,7 @@ import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     Float,
@@ -13,8 +14,8 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    Uuid,
 )
-from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from evidentia.db.models import Base
@@ -31,9 +32,9 @@ def _new_uuid() -> uuid.UUID:
 class SystematicReviewRow(Base):
     __tablename__ = "systematic_reviews"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
-    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
-    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=True)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=_new_uuid)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("users.id"), nullable=False, index=True)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("projects.id"), nullable=True)
 
     # Configuration
     research_question: Mapped[str] = mapped_column(Text, nullable=False)
@@ -67,9 +68,9 @@ class SystematicReviewRow(Base):
 class ReviewPaperRow(Base):
     __tablename__ = "review_papers"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_new_uuid)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=_new_uuid)
     review_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("systematic_reviews.id", ondelete="CASCADE"), nullable=False, index=True
+        Uuid, ForeignKey("systematic_reviews.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
     # Paper metadata
@@ -88,7 +89,7 @@ class ReviewPaperRow(Base):
 
     # Deduplication
     is_duplicate: Mapped[bool] = mapped_column(Boolean, default=False)
-    duplicate_of_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    duplicate_of_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
 
     # Screening
     screening_decision: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
