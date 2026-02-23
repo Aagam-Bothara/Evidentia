@@ -81,9 +81,7 @@ def build_agent(settings: Settings | None = None) -> EvidentiAgent:
 # ── Per-user key resolution (BYO-API vault) ─────────────────────
 
 
-async def _resolve_key(
-    vault, user_id: str, service: str, server_fallback: str | None
-) -> str | None:
+async def _resolve_key(vault, user_id: str, service: str, server_fallback: str | None) -> str | None:
     """Try user's vault key first, fall back to server config."""
     try:
         connector = f"user:{user_id}"
@@ -101,9 +99,7 @@ def _create_llm_with_key(settings: Settings, openai_key: str | None, anthropic_k
     return create_llm(settings)
 
 
-async def _build_tool_registry_for_user(
-    settings: Settings, user_id: str, vault
-) -> ToolRegistry:
+async def _build_tool_registry_for_user(settings: Settings, user_id: str, vault) -> ToolRegistry:
     """Build a tool registry using per-user keys with server fallback."""
     registry = ToolRegistry()
 
@@ -131,9 +127,7 @@ async def _build_tool_registry_for_user(
     return registry
 
 
-async def build_agent_for_user(
-    user_id: str, settings: Settings | None = None
-) -> EvidentiAgent:
+async def build_agent_for_user(user_id: str, settings: Settings | None = None) -> EvidentiAgent:
     """Create an agent with per-user API keys (vault first, server fallback)."""
     from evidentia.api.routes.keys import _get_vault
 
@@ -156,9 +150,7 @@ async def build_agent_for_user(
     )
 
 
-async def build_review_engine_for_user(
-    user_id: str, settings: Settings | None = None
-):
+async def build_review_engine_for_user(user_id: str, settings: Settings | None = None):
     """Create a SystematicReviewEngine with per-user API keys."""
     from evidentia.api.routes.keys import _get_vault
     from evidentia.review.engine import SystematicReviewEngine

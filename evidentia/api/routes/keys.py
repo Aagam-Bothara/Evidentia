@@ -13,14 +13,16 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 # Canonical service names — only these are accepted
-ALLOWED_SERVICES = frozenset({
-    "openai",
-    "anthropic",
-    "serpapi",
-    "semantic_scholar",
-    "ncbi",
-    "openalex",
-})
+ALLOWED_SERVICES = frozenset(
+    {
+        "openai",
+        "anthropic",
+        "serpapi",
+        "semantic_scholar",
+        "ncbi",
+        "openalex",
+    }
+)
 
 # ── Singleton vault instance ─────────────────────────────────────
 
