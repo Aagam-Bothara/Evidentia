@@ -11,6 +11,7 @@ decide what claims exist or what their confidence is.
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from typing import Any
 
 from evidentia.agent.decomposer import ResearchPlan
@@ -33,6 +34,37 @@ For each claim:
 Output JSON:
 {{
   "summary": "<2-3 sentence overview>",
+  "claims": [
+    {{
+      "statement": "<factual claim>",
+      "based_on_questions": ["sq1", "sq2"],
+      "key_evidence_indices": [0, 2, 5]
+    }}
+  ]
+}}
+
+Evidence fragments and sub-questions are provided below.
+"""
+
+SUMMARY_PROMPT = """\
+You are a research synthesizer. Given evidence fragments collected by a research agent, \
+write a concise 2-3 sentence overview summarizing the key findings.
+
+Be factual and precise. Only summarize what the evidence supports. \
+Output plain text only — no JSON, no markdown, no bullet points.
+"""
+
+CLAIMS_PROMPT = """\
+You are a research synthesizer. Given evidence fragments collected by a research agent, \
+formulate claims as structured JSON.
+
+For each claim:
+- State it as a single factual sentence
+- It must be directly supported by the provided evidence
+- Do NOT add information not found in the evidence
+
+Output JSON:
+{{
   "claims": [
     {{
       "statement": "<factual claim>",
@@ -98,6 +130,100 @@ class Synthesizer:
             summary=summary,
             claims=claims,
             evidence_summary=graph.summary(),
+        )
+
+    def _build_evidence_context(
+        self,
+        plan: ResearchPlan,
+        evidence: list[EvidenceFragment],
+    ) -> tuple[str, str]:
+        """Build evidence text and questions text for LLM prompts."""
+        evidence_text = ""
+        for i, frag in enumerate(evidence[:40]):
+            evidence_text += f"\n[{i}] Source: {frag.title}"
+            if frag.authors:
+                evidence_text += f"\n    Authors: {', '.join(frag.authors[:3])}"
+            if frag.url:
+                evidence_text += f"\n    URL: {frag.url}"
+            if frag.snippet:
+                evidence_text += f"\n    Content: {frag.snippet[:500]}"
+            evidence_text += "\n"
+
+        questions_text = "\n".join(f"- {sq.question} [id={sq.id}]" for sq in plan.sub_questions)
+        return evidence_text, questions_text
+
+    async def stream_synthesize(
+        self,
+        plan: ResearchPlan,
+        graph: EvidenceGraph,
+    ) -> AsyncGenerator[tuple[str, Any], None]:
+        """Yield ('token', str) for streaming summary, then ('result', SynthesisResult)."""
+        all_evidence = graph.get_all_evidence()
+
+        if not all_evidence:
+            yield (
+                "result",
+                SynthesisResult(
+                    summary="No evidence was found for this query.",
+                    claims=[],
+                    evidence_summary=graph.summary(),
+                ),
+            )
+            return
+
+        evidence_text, questions_text = self._build_evidence_context(plan, all_evidence)
+        user_content = (
+            f"Original query: {plan.original_query}\n\n"
+            f"Sub-questions:\n{questions_text}\n\n"
+            f"Evidence fragments:\n{evidence_text}"
+        )
+
+        # Phase 1: Stream the summary token by token
+        full_summary = ""
+        try:
+            async for token in self._llm.stream_chat(
+                messages=[
+                    {"role": "system", "content": SUMMARY_PROMPT},
+                    {"role": "user", "content": user_content},
+                ],
+                temperature=0.0,
+            ):
+                yield ("token", token)
+                full_summary += token
+        except Exception as exc:
+            logger.error("summary_stream_failed", error=str(exc))
+            if not full_summary:
+                full_summary = "Research completed."
+
+        # Phase 2: Get structured claims (non-streaming, needs JSON)
+        claims: list[Claim] = []
+        try:
+            response = await self._llm.chat(
+                messages=[
+                    {"role": "system", "content": CLAIMS_PROMPT},
+                    {"role": "user", "content": user_content},
+                ],
+                temperature=0.0,
+                response_format="json",
+            )
+            llm_claims = response.as_json()
+            for raw_claim in llm_claims.get("claims", []):
+                claims.append(self._build_claim(raw_claim, all_evidence))
+        except Exception as exc:
+            logger.error("claims_llm_failed", error=str(exc))
+
+        # Fallback if no claims
+        if not claims and all_evidence:
+            answered = graph.get_answered()
+            claims = self._fallback_claims(answered, all_evidence)
+
+        yield (
+            "result",
+            SynthesisResult(
+                summary=full_summary,
+                claims=claims,
+                evidence_summary=graph.summary(),
+            ),
         )
 
     async def _ask_llm_for_claims(

@@ -55,6 +55,8 @@
     // Validation
     reviewValidated: false,
     customGoldBib: null,
+    // Streaming
+    streamingSummary: false,
     // Writing Workspace
     writingMode: 'plain',
     writingLayout: 'split',
@@ -1009,6 +1011,10 @@
         handleEvidenceCheck(data);
         break;
 
+      case 'synthesis_token':
+        handleSynthesisToken(data);
+        break;
+
       case 'budget_warning':
         addTraceStep('warning', 'Budget warning', esc(data.message));
         showToast(data.message, 'warning');
@@ -1131,6 +1137,17 @@
     addTraceStep('evidence', `Evidence check: ${state.coverage}% coverage`, `${data.answered || 0} answered, ${data.gaps || 0} gaps, ${data.total_evidence || 0} fragments`);
   }
 
+  // ─── Synthesis Token Streaming ────────────────────────────────
+  function handleSynthesisToken(data) {
+    if (!state.streamingSummary) {
+      state.streamingSummary = true;
+      dom.resultsSummary.textContent = '';
+      dom.resultsSummary.style.display = 'block';
+      dom.resultsSummary.classList.add('content-appear');
+    }
+    dom.resultsSummary.textContent += data.token;
+  }
+
   // ─── Completed ─────────────────────────────────────────────────
   function handleCompleted(data) {
     state.currentResult = data;
@@ -1149,12 +1166,13 @@
 
     addTraceStep('tool-result', 'Analysis complete', `${(data.claims || []).length} claims extracted in ${data.elapsed_seconds || '?'}s`);
 
-    // Show summary with animation
-    if (data.summary) {
+    // Show summary (skip if already streamed token-by-token)
+    if (data.summary && !state.streamingSummary) {
       dom.resultsSummary.textContent = data.summary;
       dom.resultsSummary.style.display = 'block';
       dom.resultsSummary.classList.add('content-appear');
     }
+    state.streamingSummary = false;
 
     // Show claims
     renderClaims(data.claims || []);

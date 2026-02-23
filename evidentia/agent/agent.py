@@ -296,10 +296,19 @@ class EvidentiAgent:
             else:
                 logger.info("evidence_insufficient", gaps=ev_summary["gaps"])
 
-        # ── Step 6: SYNTHESIZE ───────────────────────────────────────
-        yield AgentEvent("phase", {"phase": "synthesize", "message": "Building claims from evidence..."})
+        # ── Step 6: SYNTHESIZE (with token streaming) ─────────────────
+        yield AgentEvent("phase", {"phase": "synthesize", "message": "Synthesizing findings..."})
 
-        synthesis = await self._synthesizer.synthesize(plan, graph)
+        synthesis = None
+        async for event_type, payload in self._synthesizer.stream_synthesize(plan, graph):
+            if event_type == "token":
+                yield AgentEvent("synthesis_token", {"token": payload})
+            elif event_type == "result":
+                synthesis = payload
+
+        # Fallback if streaming somehow didn't produce a result
+        if synthesis is None:
+            synthesis = await self._synthesizer.synthesize(plan, graph)
 
         elapsed = (datetime.now(UTC) - start_time).total_seconds()
 

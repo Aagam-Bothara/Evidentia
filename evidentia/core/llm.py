@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
+from collections.abc import AsyncGenerator
 from typing import Any
 
 import httpx
@@ -57,6 +58,20 @@ class BaseLLM(ABC):
         max_tokens: int = 4096,
     ) -> LLMResponse:
         """Send a chat completion with tool definitions (function calling)."""
+
+    async def stream_chat(
+        self,
+        messages: list[dict[str, str]],
+        temperature: float = 0.0,
+        max_tokens: int = 4096,
+    ) -> AsyncGenerator[str, None]:
+        """Yield tokens as they arrive from the LLM.
+
+        Default implementation falls back to non-streaming chat.
+        Subclasses override for real streaming.
+        """
+        response = await self.chat(messages, temperature, max_tokens)
+        yield response.content
 
 
 class OpenAILLM(BaseLLM):
@@ -132,6 +147,51 @@ class OpenAILLM(BaseLLM):
         content = json.dumps(message["tool_calls"]) if message.get("tool_calls") else message.get("content", "")
 
         return LLMResponse(content=content, usage=data.get("usage", {}))
+
+    async def stream_chat(
+        self,
+        messages: list[dict[str, str]],
+        temperature: float = 0.0,
+        max_tokens: int = 4096,
+    ) -> AsyncGenerator[str, None]:
+        """Yield tokens as they arrive from OpenAI-compatible API."""
+        body: dict[str, Any] = {
+            "model": self._model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": True,
+        }
+
+        async with (
+            httpx.AsyncClient(timeout=120) as client,
+            client.stream(
+                "POST",
+                f"{self._base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self._api_key}",
+                    "Content-Type": "application/json",
+                },
+                json=body,
+            ) as resp,
+        ):
+            resp.raise_for_status()
+            async for line in resp.aiter_lines():
+                if not line.startswith("data: "):
+                    continue
+                payload = line[6:]
+                if payload.strip() == "[DONE]":
+                    break
+                try:
+                    chunk = json.loads(payload)
+                    delta = chunk["choices"][0].get("delta", {})
+                    token = delta.get("content")
+                    if token:
+                        yield token
+                except (json.JSONDecodeError, KeyError, IndexError):
+                    continue
+
+        logger.info("llm_stream_complete", model=self._model)
 
 
 class AnthropicLLM(BaseLLM):
@@ -244,6 +304,61 @@ class AnthropicLLM(BaseLLM):
             content = text_blocks[0]["text"] if text_blocks else ""
 
         return LLMResponse(content=content, usage=data.get("usage", {}))
+
+    async def stream_chat(
+        self,
+        messages: list[dict[str, str]],
+        temperature: float = 0.0,
+        max_tokens: int = 4096,
+    ) -> AsyncGenerator[str, None]:
+        """Yield tokens as they arrive from Anthropic API."""
+        system = ""
+        chat_messages = []
+        for msg in messages:
+            if msg["role"] == "system":
+                system = msg["content"]
+            else:
+                chat_messages.append(msg)
+
+        body: dict[str, Any] = {
+            "model": self._model,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "messages": chat_messages,
+            "stream": True,
+        }
+        if system:
+            body["system"] = system
+
+        async with (
+            httpx.AsyncClient(timeout=120) as client,
+            client.stream(
+                "POST",
+                f"{self._base_url}/messages",
+                headers={
+                    "x-api-key": self._api_key,
+                    "anthropic-version": "2023-06-01",
+                    "Content-Type": "application/json",
+                },
+                json=body,
+            ) as resp,
+        ):
+            resp.raise_for_status()
+            async for line in resp.aiter_lines():
+                if not line.startswith("data: "):
+                    continue
+                try:
+                    event = json.loads(line[6:])
+                    if event.get("type") == "content_block_delta":
+                        token = event.get("delta", {}).get("text")
+                        if token:
+                            yield token
+                    elif event.get("type") == "message_stop":
+                        break
+                except (json.JSONDecodeError, KeyError):
+                    continue
+
+        logger.info("llm_stream_complete", model=self._model)
 
 
 def create_llm(settings: Settings) -> BaseLLM:
