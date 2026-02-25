@@ -137,7 +137,7 @@ async def init_db() -> None:
 
     # Import all models so Base.metadata knows about them
     from evidentia.db.chat_models import ChatMessageRow  # noqa: F401
-    from evidentia.db.models import Base
+    from evidentia.db.models import Base, UserCredentialRow  # noqa: F401
     from evidentia.db.review_models import ReviewPaperRow, SystematicReviewRow  # noqa: F401
     from evidentia.db.writing_models import WritingDocumentRow  # noqa: F401
 

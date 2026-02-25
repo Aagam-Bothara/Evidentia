@@ -126,3 +126,12 @@ def clear_in_memory_stores():
         _annotation_store.clear()
     except ImportError:
         pass
+
+    # Vault in-memory store
+    try:
+        from evidentia.api.routes.keys import _vault
+
+        if _vault is not None:
+            _vault._memory_store.clear()
+    except (ImportError, AttributeError):
+        pass
